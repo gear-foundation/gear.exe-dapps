@@ -1,0 +1,192 @@
+import pygame
+import random
+
+pygame.init()
+
+# Constants
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+BRICK_WIDTH = 50
+BRICK_HEIGHT = 30
+PADDLE_WIDTH = 300
+PADDLE_HEIGHT = 10
+PADDLE_Y = SCREEN_HEIGHT - 30
+BALL_SIZE = 20 
+FPS = 60
+BALL_SPEED = 5
+PADDLE_SPEED = 5
+
+# Colors
+WHITE = (255, 255, 255)
+YELLOW = (255, 255, 0)
+RED = (255, 0, 0)
+GRAY = (200, 200, 200)
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+
+# Set up the screen
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Arkanoid Simulation")
+clock = pygame.time.Clock()
+
+font = pygame.font.SysFont(None, 36)
+
+# Paddle setup
+paddle_x_start = random.randint(0, SCREEN_WIDTH - PADDLE_WIDTH)
+paddle = pygame.Rect(paddle_x_start, PADDLE_Y, PADDLE_WIDTH, PADDLE_HEIGHT)
+
+# Ball setup
+ball = pygame.Rect(paddle.centerx - BALL_SIZE // 2, paddle.top - BALL_SIZE, BALL_SIZE, BALL_SIZE)
+ball_speed_x = random.choice([-BALL_SPEED, BALL_SPEED])
+ball_speed_y = -BALL_SPEED
+
+# Print initial paddle and ball setup
+print(f"Initial paddle position: {paddle_x_start}, Initial ball vector: ({ball_speed_x}, {ball_speed_y})")
+
+# Space Invader brick layout (0 - empty, 1 - yellow, 2 - red, 3 - gray)
+invader_pattern = [
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 3, 3, 3, 3, 3, 3, 0],
+    [3, 2, 2, 3, 3, 2, 2, 3],
+    [3, 3, 3, 3, 3, 3, 3, 3],
+    [0, 3, 0, 3, 3, 0, 3, 0]
+]
+
+# Brick colors
+colors = {
+    1: YELLOW,
+    2: RED,
+    3: GRAY
+}
+
+# Generate bricks based on the Space Invader layout
+def generate_bricks():
+    bricks = []
+    for row_index, row in enumerate(invader_pattern):
+        for col_index, col in enumerate(row):
+            if col != 0:
+                brick = pygame.Rect(
+                    col_index * (BRICK_WIDTH + 2) + 200,  # Positioned centrally on screen
+                    row_index * (BRICK_HEIGHT + 2) + 100,  # Higher up on the screen
+                    BRICK_WIDTH, BRICK_HEIGHT
+                )
+                bricks.append((brick, colors[col]))  # Store brick and its color
+    return bricks
+
+# Initialize bricks
+bricks = generate_bricks()
+
+# Scoring and hits
+score = 0
+hits = 0
+ricochet_multiplier = 1  # Reset multiplier when ball hits platform
+
+# Button for restarting the game
+def draw_button(text, x, y, width, height, color):
+    pygame.draw.rect(screen, color, (x, y, width, height))
+    text_surface = font.render(text, True, WHITE)
+    screen.blit(text_surface, (x + 10, y + 10))
+    return pygame.Rect(x, y, width, height)  # Return rect for button hit detection
+
+# Display final game over screen
+def game_over_screen():
+    screen.fill(BLACK)
+    game_over_text = font.render(f"Game Over! Final Score: {score}, Hits: {hits}", True, WHITE)
+    screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 50))
+    button_rect = draw_button("Repeat Game", SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 50, 200, 50, GREEN)
+    return button_rect
+
+def restart_game():
+    global ball, ball_speed_x, ball_speed_y, paddle, bricks, score, hits, game_over
+    paddle_x_start = random.randint(0, SCREEN_WIDTH - PADDLE_WIDTH)
+    paddle = pygame.Rect(paddle_x_start, PADDLE_Y, PADDLE_WIDTH, PADDLE_HEIGHT)
+    ball = pygame.Rect(paddle.centerx - BALL_SIZE // 2, paddle.top - BALL_SIZE, BALL_SIZE, BALL_SIZE)
+    ball_speed_x = random.choice([-BALL_SPEED, BALL_SPEED])
+    ball_speed_y = -BALL_SPEED
+    bricks = generate_bricks()
+    score = 0
+    hits = 0
+    game_over = False
+    print(f"Restarted game with paddle at {paddle_x_start}")
+
+# Automatic paddle movement
+paddle_direction = 1  # 1 means right
+
+# Main game loop
+running = True
+game_over = False
+button_rect = None
+
+while running:
+    screen.fill(BLACK)
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.MOUSEBUTTONDOWN and game_over:  # Check for mouse click
+            print(f"Mouse clicked at: {event.pos}")  # Debugging print for mouse click
+            if button_rect is not None and button_rect.collidepoint(event.pos):  # Click on button
+                print("Button clicked!")  # Debugging print when button is clicked
+                restart_game()  # Restart the game when button is clicked
+
+    if not game_over:
+        # Draw paddle
+        pygame.draw.rect(screen, WHITE, paddle)
+        
+        # Draw ball
+        pygame.draw.ellipse(screen, WHITE, ball)
+        
+        # Move the ball
+        ball.x += ball_speed_x
+        ball.y += ball_speed_y
+
+        # Ball collision with walls
+        if ball.left <= 0 or ball.right >= SCREEN_WIDTH:
+            ball_speed_x *= -1  # Reflect horizontally
+        if ball.top <= 0:
+            ball_speed_y *= -1  # Reflect vertically
+
+        # Ball collision with paddle
+        if ball.colliderect(paddle):
+            ball_speed_y = -BALL_SPEED  # Reflect vertically upwards
+            hits += 1
+            ricochet_multiplier = 1  # Reset multiplier for paddle hits
+
+        # Ball collision with bricks
+        for brick in bricks[:]:
+            if ball.colliderect(brick[0]):
+                ball_speed_y *= -1  # Reflect vertically
+                score += 10 * ricochet_multiplier  # Increase score with multiplier
+                hits += 1
+                bricks.remove(brick)
+
+        # Ball falls below screen (Game Over)
+        if ball.bottom >= SCREEN_HEIGHT:
+            game_over = True
+
+        # Draw the bricks (Space Invader)
+        for brick, color in bricks:
+            pygame.draw.rect(screen, color, brick)
+
+        # Move paddle automatically
+        paddle.x += PADDLE_SPEED * paddle_direction
+        if paddle.left <= 0 or paddle.right >= SCREEN_WIDTH:
+            paddle_direction *= -1  # Change direction when paddle hits screen edges
+
+        # Display score and hits
+        score_text = font.render(f"Score: {score}", True, WHITE)
+        hits_text = font.render(f"Hits: {hits}", True, WHITE)
+        screen.blit(score_text, (20, 20))
+        screen.blit(hits_text, (20, 50))
+
+        if not bricks:
+            game_over = True
+            print("You Win!")
+
+    else:
+        button_rect = game_over_screen()
+
+    pygame.display.flip()
+    clock.tick(FPS)
+
+pygame.quit()
