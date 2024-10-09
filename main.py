@@ -29,6 +29,9 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Arkanoid Simulation")
 clock = pygame.time.Clock()
 
+background_image = pygame.image.load("img/background.jpg")
+background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
 font = pygame.font.SysFont(None, 36)
 
 # Paddle setup
@@ -118,7 +121,7 @@ game_over = False
 button_rect = None
 
 while running:
-    screen.fill(BLACK)
+    screen.blit(background_image, (0, 0))
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
