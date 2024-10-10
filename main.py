@@ -172,9 +172,13 @@ while running:
         for brick in bricks[:]:
             if ball.colliderect(brick[0]):
                 ball_speed_y *= -1  # Reflect vertically
-                score += 10 * ricochet_multiplier  # Increase score with multiplier
+                if ricochet_multiplier > 1:  # Check if it's a ricochet
+                    score += 10 * ricochet_multiplier  # Apply multiplier to score
+                else:
+                    score += 10  # Normal hit, no multiplier
                 hits += 1
                 bricks.remove(brick)
+                ricochet_multiplier += 1  # Increase multiplier after brick hit
 
         # Ball falls below screen (Game Over)
         if ball.bottom >= SCREEN_HEIGHT:
