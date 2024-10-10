@@ -4,12 +4,12 @@ import random
 pygame.init()
 
 # Constants
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-BRICK_WIDTH = 50
+SCREEN_WIDTH = 600
+SCREEN_HEIGHT = 800
+BRICK_WIDTH = 40
 BRICK_HEIGHT = 30
-PADDLE_WIDTH = 300
-PADDLE_HEIGHT = 10
+PADDLE_WIDTH = 350
+PADDLE_HEIGHT = 15
 PADDLE_Y = SCREEN_HEIGHT - 30
 BALL_SIZE = 20 
 FPS = 60
@@ -43,24 +43,37 @@ ball = pygame.Rect(paddle.centerx - BALL_SIZE // 2, paddle.top - BALL_SIZE, BALL
 ball_speed_x = random.choice([-BALL_SPEED, BALL_SPEED])
 ball_speed_y = -BALL_SPEED
 
-# Print initial paddle and ball setup
 print(f"Initial paddle position: {paddle_x_start}, Initial ball vector: ({ball_speed_x}, {ball_speed_y})")
 
 # Space Invader brick layout (0 - empty, 1 - yellow, 2 - red, 3 - gray)
 invader_pattern = [
-    [0, 0, 1, 1, 1, 1, 0, 0],
-    [0, 3, 3, 3, 3, 3, 3, 0],
-    [3, 2, 2, 3, 3, 2, 2, 3],
-    [3, 3, 3, 3, 3, 3, 3, 3],
-    [0, 3, 0, 3, 3, 0, 3, 0]
+    [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], 
+    [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], 
+    [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], 
+    [0, 0, 3, 3, 3, 3, 3, 3, 3, 0, 0], 
+    [0, 0, 3, 2, 3, 3, 3, 2, 3, 0, 0], 
+    [0, 3, 3, 2, 3, 3, 3, 2, 3, 3, 0], 
+    [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0], 
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], 
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], 
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], 
+    [3, 0, 3, 3, 3, 3, 3, 3, 3, 0, 3], 
+    [3, 0, 3, 0, 0, 0, 0, 0, 3, 0, 3],
+    [3, 0, 3, 0, 0, 0, 0, 0, 3, 0, 3],
+    [0, 0, 0, 3, 3, 0, 3, 3, 0, 0, 0],
+    [0, 0, 0, 3, 3, 0, 3, 3, 0, 0, 0],
 ]
 
-# Brick colors
 colors = {
     1: YELLOW,
     2: RED,
     3: GRAY
 }
+
+INVADER_COLUMNS = len(invader_pattern[0]) 
+total_invader_width = INVADER_COLUMNS * (BRICK_WIDTH + 2)
+horizontal_offset = (SCREEN_WIDTH - total_invader_width) // 2
 
 # Generate bricks based on the Space Invader layout
 def generate_bricks():
@@ -69,11 +82,11 @@ def generate_bricks():
         for col_index, col in enumerate(row):
             if col != 0:
                 brick = pygame.Rect(
-                    col_index * (BRICK_WIDTH + 2) + 200,  # Positioned centrally on screen
-                    row_index * (BRICK_HEIGHT + 2) + 100,  # Higher up on the screen
+                    horizontal_offset + col_index * (BRICK_WIDTH + 2),
+                    row_index * (BRICK_HEIGHT + 2) + 50,
                     BRICK_WIDTH, BRICK_HEIGHT
                 )
-                bricks.append((brick, colors[col]))  # Store brick and its color
+                bricks.append((brick, colors[col]))
     return bricks
 
 # Initialize bricks
