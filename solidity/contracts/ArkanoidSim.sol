@@ -25,6 +25,9 @@ contract ArkanoidSim {
     GameState public state;
 
     event GameResult(uint score, uint hits, string status);
+    event GameUpdated(int ballX, int ballY, int paddleX);
+
+    event GameResult(uint score, uint hits, string status);
 
     function initializeGame(int _paddleX, int _ballSpeedX, int _ballSpeedY) public {
         state.paddleX = _paddleX;
@@ -69,6 +72,22 @@ contract ArkanoidSim {
         state.bricks[13] = row14;
         state.bricks[14] = row15;
     }
+
+    function startBounce(int _paddleX, int _ballSpeedX, int _ballSpeedY) public {
+        state.paddleX = _paddleX;
+        state.ballX = _paddleX + int(PADDLE_WIDTH / 2) - int(BALL_SIZE / 2);
+        state.ballY = int(SCREEN_HEIGHT - PADDLE_HEIGHT - BALL_SIZE);
+        state.ballSpeedX = _ballSpeedX;
+        state.ballSpeedY = _ballSpeedY;
+
+        emit GameUpdated(state.ballX, state.ballY, state.paddleX);
+
+        function updateGame() public {
+            
+        }
+    }
+
+
 }
 
 
