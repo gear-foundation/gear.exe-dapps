@@ -119,6 +119,7 @@ contract ArkanoidSim {
                         state.ballSpeedY *= -1;
                         state.score += 10;
                         state.hits += 1;
+                        break;
                     }
                 }
             }
