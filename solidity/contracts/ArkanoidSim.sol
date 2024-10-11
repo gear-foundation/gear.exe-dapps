@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
+import "abdk-libraries-solidity/ABDKMath64x64.sol";
+
 contract ArkanoidSim {
+    using ABDKMath64x64 for int128;
+
     uint constant PADDLE_WIDTH = 350;
     uint constant PADDLE_HEIGHT = 15;
     uint constant PADDLE_SPEED = 6;
@@ -12,6 +16,7 @@ contract ArkanoidSim {
     uint constant BRICK_HEIGHT = 30;
     uint constant BALL_SPEED = 5;
     uint constant MAX_STEPS = 10000;
+    int constant BALL_RADIUS = int(BALL_SIZE / 2);
 
     struct GameState {
         int ballX;
@@ -60,6 +65,17 @@ contract ArkanoidSim {
         ];
     }
 
+    function distanceToBrick(int ballX, int ballY, int brickX, int brickY, int brickWidth, int brickHeight) internal pure returns (int128) {
+        int nearestX = ballX < brickX ? brickX : (ballX > brickX + brickWidth ? brickX + brickWidth : ballX);
+        int nearestY = ballY < brickY ? brickY : (ballY > brickY + brickHeight ? brickY + brickHeight : ballY);
+
+        int deltaX = ballX - nearestX;
+        int deltaY = ballY - nearestY;
+
+        // Calculate sqrt(deltaX^2 + deltaY^2) using ABDKMath64x64
+        return ABDKMath64x64.sqrt(ABDKMath64x64.fromInt(deltaX * deltaX + deltaY * deltaY));
+    }
+
     function startBounce(int _paddleX, int _ballSpeedX, int _ballSpeedY) public {
         state.paddleX = _paddleX;
         state.ballX = _paddleX + int(PADDLE_WIDTH / 2) - int(BALL_SIZE / 2);
@@ -102,8 +118,7 @@ contract ArkanoidSim {
         }
 
         // Ball-paddle collision
-        if (state.ballY + int(BALL_SIZE) >= int(SCREEN_HEIGHT - PADDLE_HEIGHT) &&
-            state.ballX >= state.paddleX && state.ballX <= state.paddleX + int(PADDLE_WIDTH)) {
+        if (distanceToRect(state.ballX, state.ballY, state.paddleX, int(SCREEN_HEIGHT - PADDLE_HEIGHT), PADDLE_WIDTH, PADDLE_HEIGHT) <= int128(BALL_RADIUS)) {
             state.ballSpeedY *= -1;
             state.hits += 1;
         }
@@ -115,8 +130,7 @@ contract ArkanoidSim {
                     int brickX = int(j * BRICK_WIDTH);
                     int brickY = int(i * BRICK_HEIGHT);
 
-                    if (state.ballX >= brickX && state.ballX <= brickX + int(BRICK_WIDTH) &&
-                        state.ballY >= brickY && state.ballY <= brickY + int(BRICK_HEIGHT)) {
+                    if (distanceToBrick(state.ballX, state.ballY, brickX, brickY, BRICK_WIDTH, BRICK_HEIGHT) <= int128(BALL_RADIUS)) {
                         state.bricks[i][j] = false;
                         state.ballSpeedY *= -1;
                         state.score += 10;
