@@ -22,6 +22,7 @@ contract ArkanoidSim {
         uint score;
         uint hits;
         bool gameOver;
+        string gameStatus;
         bool[11][15] bricks;  // Bricks state (arr size 15x11)
     }
 
@@ -70,6 +71,7 @@ contract ArkanoidSim {
             updateGame();
 
             if (state.gameOver) {
+                emit GameResult(state.score, state.hits, state.gameStatus);
                 break;
             }
         }
@@ -128,7 +130,7 @@ contract ArkanoidSim {
         // Check if the ball falls below the paddle
         if (state.ballY > int(SCREEN_HEIGHT)) {
             state.gameOver = true;
-            emit GameResult(state.score, state.hits, "Game Over");
+            state.gameStatus = "Game Over";
         }
 
         // 7. Check if all bricks are destroyed
@@ -144,10 +146,8 @@ contract ArkanoidSim {
         
         if (allBricksDestroyed) {
             state.gameOver = true;
-            emit GameResult(state.score, state.hits, "You Win!");
+            state.gameStatus = "You Win!";
         }
-
-        emit GameUpdated(state.ballX, state.ballY, state.paddleX);
     }
 
     function isGameOver() public view returns (bool) {
