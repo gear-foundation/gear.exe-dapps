@@ -16,6 +16,10 @@ contract ArkanoidSim {
     uint constant BRICK_HEIGHT = 30;
     uint constant BALL_SPEED = 5;
     uint constant MAX_STEPS = 10000;
+    uint constant VERTICAL_OFFSET = 50;
+    uint constant BRICK_MARGIN = 2;
+    uint constant TOTAL_BRICKS_WIDTH = BRICK_WIDTH * 11 + BRICK_MARGIN * 10;
+    int constant HORIZONTAL_OFFSET = int((SCREEN_WIDTH - TOTAL_BRICKS_WIDTH) / 2); 
     int constant BALL_RADIUS = int(BALL_SIZE / 2);
 
     struct GameState {
@@ -127,9 +131,9 @@ contract ArkanoidSim {
         for (uint i = 0; i < 15; i++) {
             for (uint j = 0; j < 11; j++) {
                 if (state.bricks[i][j]) {
-                    int brickX = int(j * BRICK_WIDTH);
-                    int brickY = int(i * BRICK_HEIGHT);
-
+                    int brickX = int(j * (BRICK_WIDTH + BRICK_MARGIN)) + HORIZONTAL_OFFSET;
+                    int brickY = int(i * (BRICK_HEIGHT + BRICK_MARGIN)) + VERTICAL_OFFSET;
+          
                     if (distanceToBrick(state.ballX, state.ballY, brickX, brickY, BRICK_WIDTH, BRICK_HEIGHT) <= int128(BALL_RADIUS)) {
                         state.bricks[i][j] = false;
                         state.ballSpeedY *= -1;
@@ -147,7 +151,7 @@ contract ArkanoidSim {
             state.gameStatus = "Game Over";
         }
 
-        // 7. Check if all bricks are destroyed
+        // Check if all bricks are destroyed
         bool allBricksDestroyed = true;
         for (uint i = 0; i < 15; i++) {
             for (uint j = 0; j < 11; j++) {
