@@ -83,8 +83,77 @@ contract ArkanoidSim {
         emit GameUpdated(state.ballX, state.ballY, state.paddleX);
 
         function updateGame() public {
-            
+        // Движение платформы
+        state.paddleX += int(PADDLE_SPEED);
+        if (state.paddleX < 0) {
+            state.paddleX = 0;
         }
+        if (state.paddleX + int(PADDLE_WIDTH) > int(SCREEN_WIDTH)) {
+            state.paddleX = int(SCREEN_WIDTH) - int(PADDLE_WIDTH);
+        }
+
+        // Движение мяча
+        state.ballX += state.ballSpeedX;
+        state.ballY += state.ballSpeedY;
+
+        // Столкновения мяча со стенками
+        if (state.ballX <= 0 || state.ballX + int(BALL_SIZE) >= int(SCREEN_WIDTH)) {
+            state.ballSpeedX *= -1; // Отражение по горизонтали
+        }
+        if (state.ballY <= 0) {
+            state.ballSpeedY *= -1; // Отражение по вертикали
+        }
+
+        // Столкновение мяча с платформой
+        if (state.ballY + int(BALL_SIZE) >= int(SCREEN_HEIGHT - PADDLE_HEIGHT) &&
+            state.ballX >= state.paddleX && state.ballX <= state.paddleX + int(PADDLE_WIDTH)) {
+            state.ballSpeedY *= -1; // Отражение мяча от платформы
+            state.hits += 1;
+        }
+
+        // Проверка на столкновение с кирпичами
+        for (uint i = 0; i < 15; i++) {
+            for (uint j = 0; j < 11; j++) {
+                if (state.bricks[i][j]) {
+                    int brickX = int(j * BRICK_WIDTH);
+                    int brickY = int(i * BRICK_HEIGHT);
+
+                    // Проверяем столкновение мяча с кирпичом
+                    if (state.ballX >= brickX && state.ballX <= brickX + int(BRICK_WIDTH) &&
+                        state.ballY >= brickY && state.ballY <= brickY + int(BRICK_HEIGHT)) {
+                        state.bricks[i][j] = false; // Убираем кирпич
+                        state.ballSpeedY *= -1; // Отражение мяча от кирпича
+                        state.score += 10; // Увеличиваем счет
+                        state.hits += 1;
+                    }
+                }
+            }
+        }
+
+        // Проверка на Game Over (если мяч упал ниже экрана)
+        if (state.ballY > int(SCREEN_HEIGHT)) {
+            state.gameOver = true;
+            emit GameResult(state.score, state.hits, "Game Over");
+        }
+
+        // Проверка на победу (если все кирпичи уничтожены)
+        bool allBricksDestroyed = true;
+        for (uint i = 0; i < 15; i++) {
+            for (uint j = 0; j < 11; j++) {
+                if (state.bricks[i][j]) {
+                    allBricksDestroyed = false;
+                    break;
+                }
+            }
+        }
+        if (allBricksDestroyed) {
+            state.gameOver = true;
+            emit GameResult(state.score, state.hits, "You Win!");
+        }
+
+        // Эмитируем обновление игры
+        emit GameUpdated(state.ballX, state.ballY, state.paddleX);
+    }
     }
 
 
