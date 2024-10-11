@@ -4,12 +4,14 @@ pragma solidity ^0.8.27;
 contract ArkanoidSim {
     uint constant PADDLE_WIDTH = 350;
     uint constant PADDLE_HEIGHT = 15;
+    uint constant PADDLE_SPEED = 6;
     uint constant BALL_SIZE = 20;
     uint constant SCREEN_WIDTH = 600;
     uint constant SCREEN_HEIGHT = 800;
     uint constant BRICK_WIDTH = 40;
     uint constant BRICK_HEIGHT = 30;
     uint constant BALL_SPEED = 5;
+
     struct GameState {
         int ballX;
         int ballY;
@@ -24,9 +26,7 @@ contract ArkanoidSim {
 
     GameState public state;
 
-    event GameResult(uint score, uint hits, string status);
     event GameUpdated(int ballX, int ballY, int paddleX);
-
     event GameResult(uint score, uint hits, string status);
 
     function initializeGame(int _paddleX, int _ballSpeedX, int _ballSpeedY) public {
@@ -82,8 +82,10 @@ contract ArkanoidSim {
 
         emit GameUpdated(state.ballX, state.ballY, state.paddleX);
 
-        function updateGame() public {
-        // Движение платформы
+    }
+
+    function updateGame() public {
+
         state.paddleX += int(PADDLE_SPEED);
         if (state.paddleX < 0) {
             state.paddleX = 0;
@@ -92,51 +94,44 @@ contract ArkanoidSim {
             state.paddleX = int(SCREEN_WIDTH) - int(PADDLE_WIDTH);
         }
 
-        // Движение мяча
         state.ballX += state.ballSpeedX;
         state.ballY += state.ballSpeedY;
 
-        // Столкновения мяча со стенками
         if (state.ballX <= 0 || state.ballX + int(BALL_SIZE) >= int(SCREEN_WIDTH)) {
-            state.ballSpeedX *= -1; // Отражение по горизонтали
+            state.ballSpeedX *= -1;
         }
         if (state.ballY <= 0) {
-            state.ballSpeedY *= -1; // Отражение по вертикали
+            state.ballSpeedY *= -1;
         }
 
-        // Столкновение мяча с платформой
         if (state.ballY + int(BALL_SIZE) >= int(SCREEN_HEIGHT - PADDLE_HEIGHT) &&
             state.ballX >= state.paddleX && state.ballX <= state.paddleX + int(PADDLE_WIDTH)) {
-            state.ballSpeedY *= -1; // Отражение мяча от платформы
+            state.ballSpeedY *= -1;
             state.hits += 1;
         }
 
-        // Проверка на столкновение с кирпичами
         for (uint i = 0; i < 15; i++) {
             for (uint j = 0; j < 11; j++) {
                 if (state.bricks[i][j]) {
                     int brickX = int(j * BRICK_WIDTH);
                     int brickY = int(i * BRICK_HEIGHT);
 
-                    // Проверяем столкновение мяча с кирпичом
                     if (state.ballX >= brickX && state.ballX <= brickX + int(BRICK_WIDTH) &&
                         state.ballY >= brickY && state.ballY <= brickY + int(BRICK_HEIGHT)) {
-                        state.bricks[i][j] = false; // Убираем кирпич
-                        state.ballSpeedY *= -1; // Отражение мяча от кирпича
-                        state.score += 10; // Увеличиваем счет
+                        state.bricks[i][j] = false;
+                        state.ballSpeedY *= -1;
+                        state.score += 10;
                         state.hits += 1;
                     }
                 }
             }
         }
 
-        // Проверка на Game Over (если мяч упал ниже экрана)
         if (state.ballY > int(SCREEN_HEIGHT)) {
             state.gameOver = true;
             emit GameResult(state.score, state.hits, "Game Over");
         }
 
-        // Проверка на победу (если все кирпичи уничтожены)
         bool allBricksDestroyed = true;
         for (uint i = 0; i < 15; i++) {
             for (uint j = 0; j < 11; j++) {
@@ -151,12 +146,8 @@ contract ArkanoidSim {
             emit GameResult(state.score, state.hits, "You Win!");
         }
 
-        // Эмитируем обновление игры
         emit GameUpdated(state.ballX, state.ballY, state.paddleX);
     }
-    }
-
-
 }
 
 
