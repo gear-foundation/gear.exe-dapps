@@ -11,6 +11,7 @@ contract ArkanoidSim {
     uint constant BRICK_WIDTH = 40;
     uint constant BRICK_HEIGHT = 30;
     uint constant BALL_SPEED = 5;
+    uint constant MAX_STEPS = 10000;
 
     struct GameState {
         int ballX;
@@ -65,8 +66,13 @@ contract ArkanoidSim {
         state.ballSpeedX = _ballSpeedX;
         state.ballSpeedY = _ballSpeedY;
 
-        emit GameUpdated(state.ballX, state.ballY, state.paddleX);
+        for (uint i = 0; i < MAX_STEPS; i++) {
+            updateGame();
 
+            if (state.gameOver) {
+                break;
+            }
+        }
     }
 
     function updateGame() public {
