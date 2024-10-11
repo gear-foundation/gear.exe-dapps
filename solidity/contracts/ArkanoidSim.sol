@@ -39,38 +39,23 @@ contract ArkanoidSim {
         state.hits = 0;
         state.gameOver = false;
 
-        // Bricks template
-        bool[11] memory row1 = [false, false, true, false, false, false, false, false, true, false, false];
-        bool[11] memory row2 = [false, false, true, false, false, false, false, false, true, false, false];
-        bool[11] memory row3 = [false, false, false, true, false, false, false, true, false, false, false];
-        bool[11] memory row4 = [false, false, false, true, false, false, false, true, false, false, false];
-        bool[11] memory row5 = [false, false, true, true, true, true, true, true, true, false, false];
-        bool[11] memory row6 = [false, false, true, false, true, true, true, false, true, false, false];
-        bool[11] memory row7 = [false, true, true, false, true, true, true, false, true, true, false];
-        bool[11] memory row8 = [false, true, true, true, true, true, true, true, true, true, false];
-        bool[11] memory row9 = [true, true, true, true, true, true, true, true, true, true, true];
-        bool[11] memory row10 = [true, true, true, true, true, true, true, true, true, true, true];
-        bool[11] memory row11 = [true, true, true, true, true, true, true, true, true, true, true];
-        bool[11] memory row12 = [true, false, true, true, true, true, true, true, true, false, true];
-        bool[11] memory row13 = [true, false, true, false, false, false, false, false, true, false, true];
-        bool[11] memory row14 = [true, false, true, false, false, false, false, false, true, false, true];
-        bool[11] memory row15 = [false, false, false, true, true, false, true, true, false, false, false];
-
-        state.bricks[0] = row1;
-        state.bricks[1] = row2;
-        state.bricks[2] = row3;
-        state.bricks[3] = row4;
-        state.bricks[4] = row5;
-        state.bricks[5] = row6;
-        state.bricks[6] = row7;
-        state.bricks[7] = row8;
-        state.bricks[8] = row9;
-        state.bricks[9] = row10;
-        state.bricks[10] = row11;
-        state.bricks[11] = row12;
-        state.bricks[12] = row13;
-        state.bricks[13] = row14;
-        state.bricks[14] = row15;
+        state.bricks = [
+            [false, false, true, false, false, false, false, false, true, false, false],
+            [false, false, true, false, false, false, false, false, true, false, false],
+            [false, false, false, true, false, false, false, true, false, false, false],
+            [false, false, false, true, false, false, false, true, false, false, false],
+            [false, false, true, true, true, true, true, true, true, false, false],
+            [false, false, true, false, true, true, true, false, true, false, false],
+            [false, true, true, false, true, true, true, false, true, true, false],
+            [false, true, true, true, true, true, true, true, true, true, false],
+            [true, true, true, true, true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true, true, true, true, true],
+            [true, false, true, true, true, true, true, true, true, false, true],
+            [true, false, true, false, false, false, false, false, true, false, true],
+            [true, false, true, false, false, false, false, false, true, false, true],
+            [false, false, false, true, true, false, true, true, false, false, false]
+        ];
     }
 
     function startBounce(int _paddleX, int _ballSpeedX, int _ballSpeedY) public {
@@ -86,6 +71,7 @@ contract ArkanoidSim {
 
     function updateGame() public {
 
+        // Paddle is automatic, bounded by screen limits
         state.paddleX += int(PADDLE_SPEED);
         if (state.paddleX < 0) {
             state.paddleX = 0;
@@ -94,22 +80,27 @@ contract ArkanoidSim {
             state.paddleX = int(SCREEN_WIDTH) - int(PADDLE_WIDTH);
         }
 
+        // Ball movement
         state.ballX += state.ballSpeedX;
         state.ballY += state.ballSpeedY;
 
+
+        // Ball collision with the walls
         if (state.ballX <= 0 || state.ballX + int(BALL_SIZE) >= int(SCREEN_WIDTH)) {
-            state.ballSpeedX *= -1;
+            state.ballSpeedX *= -1; // Reflect horizontally
         }
         if (state.ballY <= 0) {
-            state.ballSpeedY *= -1;
+            state.ballSpeedY *= -1; // Reflect vertically
         }
 
+        // Ball-paddle collision
         if (state.ballY + int(BALL_SIZE) >= int(SCREEN_HEIGHT - PADDLE_HEIGHT) &&
             state.ballX >= state.paddleX && state.ballX <= state.paddleX + int(PADDLE_WIDTH)) {
             state.ballSpeedY *= -1;
             state.hits += 1;
         }
 
+        //  Ball-brick collision
         for (uint i = 0; i < 15; i++) {
             for (uint j = 0; j < 11; j++) {
                 if (state.bricks[i][j]) {
@@ -127,11 +118,13 @@ contract ArkanoidSim {
             }
         }
 
+        // Check if the ball falls below the paddle
         if (state.ballY > int(SCREEN_HEIGHT)) {
             state.gameOver = true;
             emit GameResult(state.score, state.hits, "Game Over");
         }
 
+        // 7. Check if all bricks are destroyed
         bool allBricksDestroyed = true;
         for (uint i = 0; i < 15; i++) {
             for (uint j = 0; j < 11; j++) {
@@ -141,6 +134,7 @@ contract ArkanoidSim {
                 }
             }
         }
+        
         if (allBricksDestroyed) {
             state.gameOver = true;
             emit GameResult(state.score, state.hits, "You Win!");
@@ -148,6 +142,8 @@ contract ArkanoidSim {
 
         emit GameUpdated(state.ballX, state.ballY, state.paddleX);
     }
+
+    function isGameOver() public view returns (bool) {
+        return state.gameOver;
+    }
 }
-
-
