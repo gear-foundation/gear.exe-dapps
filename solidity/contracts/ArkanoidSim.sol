@@ -49,7 +49,7 @@ contract ArkanoidSim {
         state.paddleX = _paddleX;
         state.paddleY = int(SCREEN_HEIGHT - PADDLE_HEIGHT - 30); 
         state.ballX = _paddleX + int(PADDLE_WIDTH / 2) - int(BALL_SIZE / 2);
-        state.ballY = int(SCREEN_HEIGHT - PADDLE_HEIGHT - BALL_SIZE);
+        state.ballY = int(SCREEN_HEIGHT - PADDLE_HEIGHT - BALL_SIZE) - 20;
         state.ballSpeedX = _ballSpeedX;
         state.ballSpeedY = _ballSpeedY;
         state.score = 0;
@@ -77,24 +77,31 @@ contract ArkanoidSim {
         ];
     }
 
-    function distanceToRect(int ballX, int ballY, int brickX, int brickY, int brickWidth, int brickHeight) internal pure returns (int128) {
-        int nearestX = ballX < brickX ? brickX : (ballX > brickX + brickWidth ? brickX + brickWidth : ballX);
-        int nearestY = ballY < brickY ? brickY : (ballY > brickY + brickHeight ? brickY + brickHeight : ballY);
+    function checkCircleRectangleCollision(int ballX, int ballY, int radius, int rectX1, int rectY1, int rectX2, int rectY2) internal pure returns (bool collisionX, bool collisionY) {
+
+        int nearestX = rectX1 > ballX ? rectX1 : (ballX > rectX2 ? rectX2 : ballX);
+        int nearestY = rectY1 > ballY ? rectY1 : (ballY > rectY2 ? rectY2 : ballY);
 
         int deltaX = ballX - nearestX;
         int deltaY = ballY - nearestY;
 
-        // Calculate sqrt(deltaX^2 + deltaY^2) using ABDKMath64x64
-        return ABDKMath64x64.sqrt(ABDKMath64x64.fromInt(deltaX * deltaX + deltaY * deltaY));
+        int distanceSquared = deltaX * deltaX + deltaY * deltaY;
+
+        int128 distanceSquaredFixed = ABDKMath64x64.fromInt(distanceSquared);
+        int128 radiusFixed = ABDKMath64x64.fromInt(radius);
+        int128 radiusSquaredFixed = radiusFixed.mul(radiusFixed);
+
+        if (distanceSquaredFixed <= radiusSquaredFixed) {
+            collisionX = (nearestX == rectX1 || nearestX == rectX2);  // Collision on the sides
+            collisionY = (nearestY == rectY1 || nearestY == rectY2);  // Collision on the top or bottom
+            return (collisionX, collisionY);
+        } else {
+            return (false, false);
+        }
     }
 
-    function startBounce(int _paddleX, int _ballSpeedX, int _ballSpeedY) public {
-        state.paddleX = _paddleX;
-        state.ballX = _paddleX + int(PADDLE_WIDTH / 2) - int(BALL_SIZE / 2);
-        state.ballY = int(SCREEN_HEIGHT - PADDLE_HEIGHT - BALL_SIZE);
-        state.ballSpeedX = _ballSpeedX;
-        state.ballSpeedY = _ballSpeedY;
-
+    function startBounce() public {
+        
         for (uint i = 0; i < MAX_STEPS; i++) {
             updateGame();
 
@@ -107,7 +114,7 @@ contract ArkanoidSim {
 
     function updateGame() public {
 
-        // increment steps
+        // Increment steps
         state.stepCount++;
 
         // Paddle is automatic, bounded by screen limits
@@ -132,26 +139,42 @@ contract ArkanoidSim {
         }
 
         // Ball-paddle collision
-        if (distanceToRect(state.ballX, state.ballY, state.paddleX, state.paddleY, int(PADDLE_WIDTH), int(PADDLE_HEIGHT)) <= int128(BALL_RADIUS)) {
+        if (state.ballY + int(BALL_RADIUS) >= state.paddleY 
+            && state.ballX >= state.paddleX 
+            && state.ballX <= state.paddleX + int(PADDLE_WIDTH)) {
+                
             state.ballSpeedY *= -1;
             state.hits += 1;
         }
-
+        
         // Ball-brick collision
         bool brickHit = false;
-        for (uint i = 0; i < 15; i++) {
+        for (uint i = 0; i < 16; i++) {
             for (uint j = 0; j < 11; j++) {
                 if (state.bricks[i][j]) {
-                    int brickX = int(j * (BRICK_WIDTH + BRICK_MARGIN)) + HORIZONTAL_OFFSET;
-                    int brickY = int(i * (BRICK_HEIGHT + BRICK_MARGIN)) + int(VERTICAL_OFFSET);
+                    int brickX1 = int(j * (BRICK_WIDTH + BRICK_MARGIN)) + HORIZONTAL_OFFSET;
+                    int brickY1 = int(i * (BRICK_HEIGHT + BRICK_MARGIN)) + int(VERTICAL_OFFSET);
+                    int brickX2 = brickX1 + int(BRICK_WIDTH);
+                    int brickY2 = brickY1 + int(BRICK_HEIGHT);
 
-                    if (distanceToRect(state.ballX, state.ballY, brickX, brickY, int(BRICK_WIDTH), int(BRICK_HEIGHT)) <= int128(BALL_RADIUS)) {
+                    (bool collisionX, bool collisionY) = checkCircleRectangleCollision(
+                        state.ballX, state.ballY, int(BALL_RADIUS), 
+                        brickX1, brickY1, brickX2, brickY2
+                    );
+
+                    if (collisionX || collisionY) {
                         state.bricks[i][j] = false;
-                        state.ballSpeedY *= -1;
                         state.score += 10;
                         state.hits += 1;
+
+                        if (collisionX) {
+                            state.ballSpeedX *= -1;
+                        }
+                        if (collisionY) {
+                            state.ballSpeedY *= -1;
+                        }
+
                         brickHit = true;
-                        break;
                     }
                 }
             }
@@ -160,7 +183,7 @@ contract ArkanoidSim {
         // Check if all bricks are destroyed
         if (brickHit) {
             bool allBricksDestroyed = true;
-            for (uint i = 0; i < 15; i++) {
+            for (uint i = 0; i < 16; i++) {
                 for (uint j = 0; j < 11; j++) {
                     if (state.bricks[i][j]) {
                         allBricksDestroyed = false;

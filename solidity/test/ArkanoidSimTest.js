@@ -20,7 +20,6 @@ describe("ArkanoidSim", function () {
   });
 });
 
-
 describe("ArkanoidSim StartBounce", function () {
   let ArkanoidSim, arkanoidSim;
 
@@ -31,8 +30,12 @@ describe("ArkanoidSim StartBounce", function () {
       arkanoidSim = await ArkanoidSim.deploy();
       console.log("Contract deployed at address:", arkanoidSim.target);
 
-      // Initializing the game
-      await arkanoidSim.initializeGame(300, 0, 0);
+      // Initializing the game with paddle position and ball speed
+      const initialPaddleX = 395;
+      const initialBallSpeedX = 6;
+      const initialBallSpeedY = -6;
+
+      await arkanoidSim.initializeGame(initialPaddleX, initialBallSpeedX, initialBallSpeedY);
       console.log("Game initialized");
     } catch (error) {
       console.error("Contract deployment error:", error);
@@ -40,24 +43,20 @@ describe("ArkanoidSim StartBounce", function () {
   });
 
   it("should complete the game", async function () {
-    this.timeout(60000); // Setting a 60-second timeout for the test
-
-    const initialPaddleX = 218;
-    const initialBallSpeedX = 6;
-    const initialBallSpeedY = -6;
+    this.timeout(60000);  // Set timeout for longer execution if needed
 
     // Fetching initial game state
     let state = await arkanoidSim.state();
     console.log("Initial game state:", state);
-    expect(state.gameOver).to.equal(false);
+    expect(state.gameOver).to.equal(false);  // Ensure game is not over at start
 
-    // Starting the game with the provided parameters
-    console.log("Starting the game with parameters:", { initialPaddleX, initialBallSpeedX, initialBallSpeedY });
-    const tx = await arkanoidSim.startBounce(initialPaddleX, initialBallSpeedX, initialBallSpeedY, {
+    // Starting the game without additional parameters
+    console.log("Starting the game...");
+    const tx = await arkanoidSim.startBounce({
       gasLimit: 1000000000
     });
 
-    // Waiting for the transaction to complete and logging the gas used
+    // Wait for the transaction to complete and log the gas used
     const receipt = await tx.wait();
     console.log("Transaction finished. Gas used:", receipt.gasUsed.toString());
 
