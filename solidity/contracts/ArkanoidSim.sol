@@ -10,11 +10,11 @@ contract ArkanoidSim {
     uint constant PADDLE_HEIGHT = 15;
     uint constant PADDLE_SPEED = 6;
     uint constant BALL_SIZE = 20;
-    uint constant SCREEN_WIDTH = 600;
+    uint constant SCREEN_WIDTH = 800;
     uint constant SCREEN_HEIGHT = 800;
     uint constant BRICK_WIDTH = 40;
     uint constant BRICK_HEIGHT = 30;
-    uint constant BALL_SPEED = 5;
+    uint constant BALL_SPEED = 6;
     uint constant MAX_STEPS = 10000;
     uint constant VERTICAL_OFFSET = 50;
     uint constant BRICK_MARGIN = 2;
@@ -28,26 +28,33 @@ contract ArkanoidSim {
         int ballSpeedX;
         int ballSpeedY;
         int paddleX;
+        int paddleY;
         uint score;
         uint hits;
+        uint stepCount;
         bool gameOver;
         string gameStatus;
-        bool[11][15] bricks;  // Bricks state (arr size 15x11)
+        bool[11][16] bricks;  // Bricks state (arr size 15x11)
     }
 
     GameState public state;
 
     event GameUpdated(int ballX, int ballY, int paddleX);
     event GameResult(uint score, uint hits, string status);
+    event BallCollision(string object);
+    event BallPosition(int ballX, int ballY);
+    event BrickState(uint row, uint col, bool state);
 
     function initializeGame(int _paddleX, int _ballSpeedX, int _ballSpeedY) public {
         state.paddleX = _paddleX;
+        state.paddleY = int(SCREEN_HEIGHT - PADDLE_HEIGHT - 30); 
         state.ballX = _paddleX + int(PADDLE_WIDTH / 2) - int(BALL_SIZE / 2);
         state.ballY = int(SCREEN_HEIGHT - PADDLE_HEIGHT - BALL_SIZE);
         state.ballSpeedX = _ballSpeedX;
         state.ballSpeedY = _ballSpeedY;
         state.score = 0;
         state.hits = 0;
+        state.stepCount = 0;
         state.gameOver = false;
 
         state.bricks = [
@@ -65,11 +72,12 @@ contract ArkanoidSim {
             [true, false, true, true, true, true, true, true, true, false, true],
             [true, false, true, false, false, false, false, false, true, false, true],
             [true, false, true, false, false, false, false, false, true, false, true],
+            [false, false, false, true, true, false, true, true, false, false, false],
             [false, false, false, true, true, false, true, true, false, false, false]
         ];
     }
 
-    function distanceToBrick(int ballX, int ballY, int brickX, int brickY, int brickWidth, int brickHeight) internal pure returns (int128) {
+    function distanceToRect(int ballX, int ballY, int brickX, int brickY, int brickWidth, int brickHeight) internal pure returns (int128) {
         int nearestX = ballX < brickX ? brickX : (ballX > brickX + brickWidth ? brickX + brickWidth : ballX);
         int nearestY = ballY < brickY ? brickY : (ballY > brickY + brickHeight ? brickY + brickHeight : ballY);
 
@@ -99,6 +107,9 @@ contract ArkanoidSim {
 
     function updateGame() public {
 
+        // increment steps
+        state.stepCount++;
+
         // Paddle is automatic, bounded by screen limits
         state.paddleX += int(PADDLE_SPEED);
         if (state.paddleX < 0) {
@@ -112,36 +123,55 @@ contract ArkanoidSim {
         state.ballX += state.ballSpeedX;
         state.ballY += state.ballSpeedY;
 
-
         // Ball collision with the walls
-        if (state.ballX <= 0 || state.ballX + int(BALL_SIZE) >= int(SCREEN_WIDTH)) {
-            state.ballSpeedX *= -1; // Reflect horizontally
+        if (state.ballX - int(BALL_RADIUS) <= 0 || state.ballX + int(BALL_RADIUS) >= int(SCREEN_WIDTH)) {
+            state.ballSpeedX *= -1;
         }
-        if (state.ballY <= 0) {
-            state.ballSpeedY *= -1; // Reflect vertically
+        if (state.ballY - int(BALL_RADIUS) <= 0) {
+            state.ballSpeedY *= -1;
         }
 
         // Ball-paddle collision
-        if (distanceToRect(state.ballX, state.ballY, state.paddleX, int(SCREEN_HEIGHT - PADDLE_HEIGHT), PADDLE_WIDTH, PADDLE_HEIGHT) <= int128(BALL_RADIUS)) {
+        if (distanceToRect(state.ballX, state.ballY, state.paddleX, state.paddleY, int(PADDLE_WIDTH), int(PADDLE_HEIGHT)) <= int128(BALL_RADIUS)) {
             state.ballSpeedY *= -1;
             state.hits += 1;
         }
 
-        //  Ball-brick collision
+        // Ball-brick collision
+        bool brickHit = false;
         for (uint i = 0; i < 15; i++) {
             for (uint j = 0; j < 11; j++) {
                 if (state.bricks[i][j]) {
                     int brickX = int(j * (BRICK_WIDTH + BRICK_MARGIN)) + HORIZONTAL_OFFSET;
-                    int brickY = int(i * (BRICK_HEIGHT + BRICK_MARGIN)) + VERTICAL_OFFSET;
-          
-                    if (distanceToBrick(state.ballX, state.ballY, brickX, brickY, BRICK_WIDTH, BRICK_HEIGHT) <= int128(BALL_RADIUS)) {
+                    int brickY = int(i * (BRICK_HEIGHT + BRICK_MARGIN)) + int(VERTICAL_OFFSET);
+
+                    if (distanceToRect(state.ballX, state.ballY, brickX, brickY, int(BRICK_WIDTH), int(BRICK_HEIGHT)) <= int128(BALL_RADIUS)) {
                         state.bricks[i][j] = false;
                         state.ballSpeedY *= -1;
                         state.score += 10;
                         state.hits += 1;
+                        brickHit = true;
                         break;
                     }
                 }
+            }
+        }
+
+        // Check if all bricks are destroyed
+        if (brickHit) {
+            bool allBricksDestroyed = true;
+            for (uint i = 0; i < 15; i++) {
+                for (uint j = 0; j < 11; j++) {
+                    if (state.bricks[i][j]) {
+                        allBricksDestroyed = false;
+                        break;
+                    }
+                }
+            }
+
+            if (allBricksDestroyed) {
+                state.gameOver = true;
+                state.gameStatus = "You Win!";
             }
         }
 
@@ -151,24 +181,8 @@ contract ArkanoidSim {
             state.gameStatus = "Game Over";
         }
 
-        // Check if all bricks are destroyed
-        bool allBricksDestroyed = true;
-        for (uint i = 0; i < 15; i++) {
-            for (uint j = 0; j < 11; j++) {
-                if (state.bricks[i][j]) {
-                    allBricksDestroyed = false;
-                    break;
-                }
-            }
+        if (state.gameOver) {
+            emit GameResult(state.score, state.hits, state.gameStatus);
         }
-        
-        if (allBricksDestroyed) {
-            state.gameOver = true;
-            state.gameStatus = "You Win!";
-        }
-    }
-
-    function isGameOver() public view returns (bool) {
-        return state.gameOver;
     }
 }
