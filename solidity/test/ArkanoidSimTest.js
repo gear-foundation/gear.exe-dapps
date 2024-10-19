@@ -31,7 +31,7 @@ describe("ArkanoidSim StartBounce", function () {
       console.log("Contract deployed at address:", arkanoidSim.target);
 
       // Initializing the game with paddle position and ball speed
-      const initialPaddleX = 395;
+      const initialPaddleX = 270;
       const initialBallSpeedX = 6;
       const initialBallSpeedY = -6;
 
@@ -68,7 +68,7 @@ describe("ArkanoidSim StartBounce", function () {
     expect(state.gameOver).to.equal(true);
 
     // Logging final game statistics
-    console.log("Final Score:", state.score.toString());
+    console.log("Bricks destroyed:", state.destroyedBricks.toString());
     console.log("Total Hits:", state.hits.toString());
     console.log("Steps:", state.stepCount.toString());
     console.log("Game Status:", state.gameStatus);
