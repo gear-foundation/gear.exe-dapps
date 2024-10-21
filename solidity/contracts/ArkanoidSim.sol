@@ -35,6 +35,7 @@ contract ArkanoidSim {
         int ballSpeedY;
         int paddleX;
         int paddleY;
+        int currentPaddleSpeed;
         uint hits;
         uint stepCount;
         uint destroyedBricks;
@@ -75,6 +76,7 @@ contract ArkanoidSim {
         state.ballY = int(SCREEN_HEIGHT - PADDLE_HEIGHT - BALL_SIZE) - 20;
         state.ballSpeedX = _ballSpeedX;
         state.ballSpeedY = _ballSpeedY;
+        state.currentPaddleSpeed = int(PADDLE_SPEED);
         state.hits = 0;
         state.stepCount = 0;
         state.destroyedBricks = 0;
@@ -129,11 +131,9 @@ contract ArkanoidSim {
 
         // Paddle is automatic, bounded by screen limits
         state.paddleX += int(PADDLE_SPEED);
-        if (state.paddleX < 0) {
-            state.paddleX = 0;
-        }
-        if (state.paddleX + int(PADDLE_WIDTH) > int(SCREEN_WIDTH)) {
-            state.paddleX = int(SCREEN_WIDTH) - int(PADDLE_WIDTH);
+
+        if (state.paddleX <= 0 || state.paddleX + int(PADDLE_WIDTH) >= int(SCREEN_WIDTH)) {
+            state.currentPaddleSpeed *= -1;
         }
 
         // Ball movement
