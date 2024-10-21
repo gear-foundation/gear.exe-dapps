@@ -101,11 +101,7 @@ contract ArkanoidSim {
 
         int distanceSquared = deltaX * deltaX + deltaY * deltaY;
 
-        int128 distanceSquaredFixed = ABDKMath64x64.fromInt(distanceSquared);
-        int128 radiusFixed = ABDKMath64x64.fromInt(radius);
-        int128 radiusSquaredFixed = radiusFixed.mul(radiusFixed);
-
-        if (distanceSquaredFixed <= radiusSquaredFixed) {
+        if (distanceSquared <= radius * radius) {
             collisionX = (nearestX == rectX1 || nearestX == rectX2);  // Collision on the sides
             collisionY = (nearestY == rectY1 || nearestY == rectY2);  // Collision on the top or bottom
             return (collisionX, collisionY);

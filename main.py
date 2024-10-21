@@ -13,7 +13,7 @@ PADDLE_HEIGHT = 15
 PADDLE_Y = SCREEN_HEIGHT - 30
 BALL_SIZE = 20
 FPS = 60
-BALL_SPEED = 5
+BALL_SPEED = 6
 PADDLE_SPEED = 6
 
 # Colors
@@ -40,7 +40,7 @@ paddle = pygame.Rect(paddle_x_start, PADDLE_Y, PADDLE_WIDTH, PADDLE_HEIGHT)
 
 # Ball setup
 ball = pygame.Rect(paddle.centerx - BALL_SIZE // 2, paddle.top - BALL_SIZE, BALL_SIZE, BALL_SIZE)
-ball_speed_x = random.choice([-BALL_SPEED, BALL_SPEED])
+ball_speed_x = BALL_SPEED
 ball_speed_y = -BALL_SPEED
 
 print(f"Initial paddle position: {paddle_x_start}, Initial ball vector: ({ball_speed_x}, {ball_speed_y})")
