@@ -1,0 +1,27 @@
+[package]
+name = "stylus-counter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+stylus-sdk = { version = "0.6.0", default-features = false }
+alloy-sol-types = "=0.7.6"
+
+[dev-dependencies]
+motsu = "0.1.0-rc"
+e2e = { git = "https://github.com/TucksonDev/e2e-lib.git" }
+
+[features]
+export-abi = ["stylus-sdk/export-abi"]
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[profile.release]
+codegen-units = 1
+strip = true
+lto = true
+panic = "abort"
+opt-level = "s"
+
+[workspace]
