@@ -4,7 +4,8 @@
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "chai": "^4.5.0",
     "ethers": "^6.13.4",
-    "hardhat": "^2.22.13"
+    "hardhat": "^2.22.13",
+    "ts-node": "^10.9.2"
   },
   "dependencies": {
     "abdk-libraries-solidity": "^3.2.0"
