@@ -1,0 +1,31 @@
+[workspace]
+
+members = ["client", "visualization"]
+
+
+[package]
+name = "vara-arkanoid"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+vara-arkanoid-app = { path = "app" }
+futures = { version = "0.3", default-features = false }
+
+[build-dependencies]
+vara-arkanoid-app = { path = "app" }
+sails-rs = { version = "0.6.1", features = ["wasm-builder", "ethexe"] }
+sails-idl-gen = "0.6.1"
+
+[dev-dependencies]
+vara-arkanoid = { path = ".", features = ["wasm-binary"] }
+vara-arkanoid-client = { path = "client" }
+sails-rs = { version = "0.6.1", features = ["gtest"] }
+tokio = { version = "1.40", features = ["rt", "macros"] }
+ggez = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+
+[features]
+wasm-binary = []
