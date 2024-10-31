@@ -1,49 +1,30 @@
-# 🎮 Arkanoid Simulation: Game Overview 🎮
+# Arkanoid Simulation Benchmark
 
-This project is a **Python-based Arkanoid Simulation** aimed at visualizing and simulating the mechanics that will be later implemented in smart contracts on **GEAR.EXE** and **Ethereum**.
+This document describes the setup, execution, and benchmark results of the **Arkanoid Simulation** across different platforms: Ethereum, Arbitrum EVM, Arbitrum Nitro, and Gear.exe. The simulation tests high-load computations to measure cost, speed, and scalability on each network.
 
-## 🛠️ Setup
+## Cost and Gas Comparison
 
-1. **Install dependencies**:  
-   Make sure you have `pygame` installed. You can install it by running:
+| Platform           | Instances        | Total Gas Used       | Blocks Used | Cost (USD)  | Contract/Transaction Link |
+|--------------------|------------------|----------------------|-------------|-------------|----------------------------|
+| **Ethereum**       | 1                | 789,113,326         | 26          | $27,491     | [Contract](https://holesky.etherscan.io/address/0x352f3a3F3EbcfcB5bb5CF8b9D1F3BfAD0142718f#readContract) / [Transactions](https://holesky.etherscan.io/txs?a=0x352f3a3F3EbcfcB5bb5CF8b9D1F3BfAD0142718f) |
+| **Arbitrum EVM**   | 1                | 789,113,326         | 26          | ~$200       | [Contract](https://sepolia.arbiscan.io/address/0xd133536f5ea11d8d1e8eb39b872ded09271eba9f) |
+| **Arbitrum Nitro** | 1                | 85,164,788          | 4           | $4          | [Contract](https://sepolia.arbiscan.io/address/0xd133536f5ea11d8d1e8eb39b872ded09271eba9f) |
+| **Gear.exe**       | 16 (parallel)    | 1.7T internal Gear gas | 1       | $0.17       | [Transaction](https://holesky.etherscan.io/tx/0x0b7eadb0bf73476fa90d80a2b761fc5fb1d3b19a031bed7e7d98a978824b3d50) |
 
-   ```bash
-   pip install pygame
-   ```
+## Benchmark Overview and Advantages
 
-2. **Run the game**:
-   Once dependencies are installed, simply run the game with:
+1. **Ethereum**:
+   - **Purpose**: Provides a baseline for comparison. Running high-load simulations like Arkanoid on Ethereum highlights the expense and limitations due to high gas fees.
 
-   ```bash
-   python main.py
-   ```
+2. **Arbitrum EVM**:
+   - **Setup**: The simulation ran on Arbitrum’s standard EVM with similar gas consumption to Ethereum. However, transaction costs are lower due to reduced gas prices.
 
-3. **Controls**:  
-   The paddle moves **automatically**. You don't need to control it manually, as the game is designed to simulate deterministic movements.
+3. **Arbitrum Nitro**:
+   - **Setup**: Allows larger transaction capacity with up to 1,000 iterations per block. Provides a cost-efficient solution compared to Ethereum but still involves multiple transactions for high-load processes.
 
-## 🔄 Game Mechanism
+4. **Gear.exe**:
+   - **Key Advantage**: Gear.exe allowed us to run **16 simultaneous Arkanoid simulations**, all of which fit within a single block. Each simulation involved high-load calculations, and Gear.exe’s architecture enabled these processes to complete without interruptions or additional messages.
 
-- **Paddle Movement**:  
-   The paddle moves automatically, and its initial position is randomized at the start of each game. The speed and direction of the paddle can vary based on preset parameters.
+## Conclusion
 
-- **Ball Launch**:  
-   The ball is launched from the paddle with a random initial vector (either 45 degrees left or right), and bounces off surfaces with the angle of incidence equal to the angle of reflection. This is **fully deterministic** and simulates predictable ball physics.
-
-- **Bricks**:  
-   The bricks are arranged in a pattern inspired by **Space Invaders**. Each brick has its own color and value.
-
-## 🧮 Scoring System
-
-- **Basic Hit**:  
-   Hitting a brick grants the player 10 points.
-
-- **Ricochet Multiplier**:  
-   For each consecutive hit without touching the paddle, a multiplier is applied to the score (e.g., 20, 40 points for each subsequent hit).
-
-- **Win Condition**:  
-   If all bricks are destroyed within the set amount of bounces, the player wins.
-
-## ⚙️ Simulation Purpose
-
-This simulation is designed to demonstrate the **parallel execution** model of **GEAR.EXE**. By comparing it with native Solidity execution, we aim to showcase the benefits of parallelism and low gas usage in complex scenarios.
-
+This comparison illustrates that Gear.exe offers unparalleled efficiency by fitting multiple high-load simulations into a single block at minimal cost.
