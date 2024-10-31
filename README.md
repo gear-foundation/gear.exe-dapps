@@ -7,7 +7,7 @@ This document describes the setup, execution, and benchmark results of the **Ark
 | Platform           | Instances        | Total Gas Used       | Blocks Used | Cost (USD)  | Contract/Transaction Link |
 |--------------------|------------------|----------------------|-------------|-------------|----------------------------|
 | **Ethereum**       | 1                | 789,113,326         | 26          | $27,491     | [Contract](https://holesky.etherscan.io/address/0x352f3a3F3EbcfcB5bb5CF8b9D1F3BfAD0142718f#readContract) / [Transactions](https://holesky.etherscan.io/txs?a=0x352f3a3F3EbcfcB5bb5CF8b9D1F3BfAD0142718f) |
-| **Arbitrum EVM**   | 1                | 789,113,326         | 26          | ~$200       | [Contract](https://sepolia.arbiscan.io/address/0xd133536f5ea11d8d1e8eb39b872ded09271eba9f) |
+| **Arbitrum EVM**   | 1                | 789,113,326         | 26           | ~$200       | [Transaction](https://sepolia.arbiscan.io/tx/0xf15f91abe72e99755516cf5f0e6201259b2ba6e8c94667915b2848c1bbc30f73) / [Contract](https://sepolia.arbiscan.io/address/0xa7b53da5ab4656a95d2b24142264c3465777a453) |
 | **Arbitrum Nitro** | 1                | 85,164,788          | 4           | $4          | [Contract](https://sepolia.arbiscan.io/address/0xd133536f5ea11d8d1e8eb39b872ded09271eba9f) |
 | **Gear.exe**       | 16 (parallel)    | 1.7T internal Gear gas | 1       | $0.17       | [Transaction](https://holesky.etherscan.io/tx/0x0b7eadb0bf73476fa90d80a2b761fc5fb1d3b19a031bed7e7d98a978824b3d50) |
 
