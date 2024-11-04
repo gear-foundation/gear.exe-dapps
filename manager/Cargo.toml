@@ -1,0 +1,23 @@
+
+[package]
+name = "manager"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+manager-app = { path = "app" }
+
+[build-dependencies]
+manager-app = { path = "app" }
+sails-rs = { version = "=0.6.1", features = ["wasm-builder"] }
+sails-idl-gen = "=0.6.1"
+
+[dev-dependencies]
+manager = { path = ".", features = ["wasm-binary"] }
+manager-client = { path = "client" }
+sails-rs = { version = "=0.6.1", features = ["gtest"] }
+tokio = { version = "1.41", features = ["rt", "macros"] }
+mandelbrot-checker = { path = "../mandelbrot-checker", features = ["wasm-binary"] }
+
+[features]
+wasm-binary = []
