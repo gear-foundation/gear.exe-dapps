@@ -2824,6 +2824,7 @@ dependencies = [
  "manager-app",
  "manager-client",
  "mandelbrot-checker",
+ "mandelbrot-checker-client",
  "sails-idl-gen",
  "sails-rs",
  "tokio",

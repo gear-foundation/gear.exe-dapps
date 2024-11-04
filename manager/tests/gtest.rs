@@ -5,6 +5,7 @@ use sails_rs::{
 };
 
 use manager_client::traits::*;
+use mandelbrot_checker_client::traits::*;
 const ACTOR_ID: u64 = 42;
 
 #[tokio::test]
@@ -47,7 +48,7 @@ async fn generate_and_store_points() {
 }
 
 #[tokio::test]
-async fn deploy_checkers() {
+async fn add_checkers() {
     let system = System::new();
     system.init_logger();
     system.mint_to(ACTOR_ID, 200_000_000_000_000);
@@ -61,6 +62,19 @@ async fn deploy_checkers() {
         .system()
         .submit_code(mandelbrot_checker::WASM_BINARY);
 
+    let checker_factory =
+        mandelbrot_checker_client::MandelbrotCheckerFactory::new(remoting.clone());
+    let mut checkers: Vec<ActorId> = Vec::new();
+
+    for i in 0..100 {
+        let program_id = checker_factory
+            .new()
+            .send_recv(checker_code_id, &[i])
+            .await
+            .unwrap();
+        checkers.push(program_id.into());
+    }
+
     let program_factory = manager_client::ManagerFactory::new(remoting.clone());
 
     let program_id = program_factory
@@ -69,14 +83,10 @@ async fn deploy_checkers() {
         .await
         .unwrap();
 
-    remoting
-        .system()
-        .transfer(ACTOR_ID, program_id, 100_000_000_000_000, true);
-
     let mut service_client = manager_client::Manager::new(remoting.clone());
 
     service_client
-        .deploy_checkers(checker_code_id, 100)
+        .add_checkers(checkers)
         .send_recv(program_id)
         .await
         .unwrap();
@@ -104,6 +114,19 @@ async fn check_points_set() {
         .system()
         .submit_code(mandelbrot_checker::WASM_BINARY);
 
+    let checker_factory =
+        mandelbrot_checker_client::MandelbrotCheckerFactory::new(remoting.clone());
+
+    let mut checkers: Vec<ActorId> = Vec::new();
+
+    for i in 0..100 {
+        let program_id = checker_factory
+            .new()
+            .send_recv(checker_code_id, &[i])
+            .await
+            .unwrap();
+        checkers.push(program_id.into());
+    }
     let program_factory = manager_client::ManagerFactory::new(remoting.clone());
 
     let program_id = program_factory
@@ -112,14 +135,10 @@ async fn check_points_set() {
         .await
         .unwrap();
 
-    remoting
-        .system()
-        .transfer(ACTOR_ID, program_id, 100_000_000_000_000, true);
-
     let mut service_client = manager_client::Manager::new(remoting.clone());
 
     service_client
-        .deploy_checkers(checker_code_id, 100)
+        .add_checkers(checkers)
         .send_recv(program_id)
         .await
         .unwrap();

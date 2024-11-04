@@ -1,17 +1,9 @@
 #![no_std]
 
 use rust_decimal::Decimal;
-use sails_rs::{
-    calls::*,
-    gstd::{calls::{GStdRemoting}, msg},
-    prelude::*,
-};
+use sails_rs::{gstd::msg, prelude::*};
 static mut STATE: Option<ManagerState> = None;
-use mandelbrot_checker_client::{
-    mandelbrot_checker,
-    traits::MandelbrotCheckerFactory as MandelbrotCheckerFactoryTrait,
-    MandelbrotCheckerFactory,
-};
+use mandelbrot_checker_client::mandelbrot_checker;
 #[derive(Default)]
 struct ManagerState {
     checkers: Vec<ActorId>,
@@ -21,9 +13,7 @@ struct ManagerState {
 }
 struct ManagerService(());
 
-
-impl ManagerService 
-{
+impl ManagerService {
     pub fn init() -> Self {
         unsafe { STATE = Some(ManagerState::default()) }
         Self(())
@@ -37,25 +27,13 @@ impl ManagerService
 }
 
 #[sails_rs::service]
-impl ManagerService
-{
+impl ManagerService {
     pub fn new() -> Self {
         Self(())
     }
 
-    pub async fn deploy_checkers(&mut self, code_id: CodeId, amount: u32) {
-        let checker_factory = MandelbrotCheckerFactory::new(GStdRemoting);
-       
-        let msg_id: [u8; 32] = msg::id().into();
-        for i in 0..amount {
-            let salt = generate_salt(&msg_id, i);
-            let program_id = checker_factory
-                .new()
-                .send_recv(code_id, salt)
-                .await
-                .expect("Error during program creation");
-            self.get_mut().checkers.push(program_id);
-        }
+    pub async fn add_checkers(&mut self, checkers: Vec<ActorId>) {
+        self.get_mut().checkers.extend(checkers);
     }
 
     pub fn generate_and_store_points(
@@ -164,13 +142,4 @@ impl ManagerProgram {
     pub fn manager(&self) -> ManagerService {
         ManagerService::new()
     }
-}
-
-fn generate_salt(base_value: &[u8; 32], index: u32) -> Vec<u8> {
-    let mut salt = base_value.clone();
-    let index_bytes = index.to_le_bytes();
-
-    salt[28..32].copy_from_slice(&index_bytes);
-
-    salt.to_vec()
 }
