@@ -9,7 +9,7 @@ manager-app = { path = "app" }
 
 [build-dependencies]
 manager-app = { path = "app" }
-sails-rs = { version = "=0.6.1", features = ["wasm-builder"] }
+sails-rs = { version = "=0.6.1", features = ["wasm-builder", "ethexe"] }
 sails-idl-gen = "=0.6.1"
 
 [dev-dependencies]

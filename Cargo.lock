@@ -2833,7 +2833,6 @@ dependencies = [
 name = "manager-app"
 version = "0.1.0"
 dependencies = [
- "gstd",
  "mandelbrot-checker-client",
  "rust_decimal",
  "rust_decimal_macros",

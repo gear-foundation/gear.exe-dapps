@@ -170,6 +170,6 @@ async fn check_points_set() {
         .await
         .unwrap();
 
-        let results = service_client.get_results().recv(program_id).await.unwrap();
-        println!("{:?}", results);
+    let results = service_client.get_results().recv(program_id).await.unwrap();
+    println!("{:?}", results);
 }

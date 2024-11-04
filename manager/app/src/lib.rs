@@ -1,10 +1,17 @@
 #![no_std]
 
 use rust_decimal::Decimal;
-use sails_rs::prelude::*;
+use sails_rs::{
+    calls::*,
+    gstd::{calls::{GStdRemoting}, msg},
+    prelude::*,
+};
 static mut STATE: Option<ManagerState> = None;
-use gstd::prog;
-use mandelbrot_checker_client::{mandelbrot_checker, mandelbrot_checker_factory, traits::*};
+use mandelbrot_checker_client::{
+    mandelbrot_checker,
+    traits::MandelbrotCheckerFactory as MandelbrotCheckerFactoryTrait,
+    MandelbrotCheckerFactory,
+};
 #[derive(Default)]
 struct ManagerState {
     checkers: Vec<ActorId>,
@@ -14,7 +21,9 @@ struct ManagerState {
 }
 struct ManagerService(());
 
-impl ManagerService {
+
+impl ManagerService 
+{
     pub fn init() -> Self {
         unsafe { STATE = Some(ManagerState::default()) }
         Self(())
@@ -28,18 +37,23 @@ impl ManagerService {
 }
 
 #[sails_rs::service]
-impl ManagerService {
+impl ManagerService
+{
     pub fn new() -> Self {
         Self(())
     }
 
-    pub fn deploy_checkers(&mut self, code_id: CodeId, amount: u32) {
-        let msg_id: [u8; 32] = gstd::msg::id().into();
-        let payload = mandelbrot_checker_factory::io::New::encode_call();
+    pub async fn deploy_checkers(&mut self, code_id: CodeId, amount: u32) {
+        let checker_factory = MandelbrotCheckerFactory::new(GStdRemoting);
+       
+        let msg_id: [u8; 32] = msg::id().into();
         for i in 0..amount {
             let salt = generate_salt(&msg_id, i);
-            let (_, program_id) = prog::create_program_bytes(code_id, salt, payload.clone(), 0)
-                .expect("Error during checker creation");
+            let program_id = checker_factory
+                .new()
+                .send_recv(code_id, salt)
+                .await
+                .expect("Error during program creation");
             self.get_mut().checkers.push(program_id);
         }
     }
@@ -105,7 +119,7 @@ impl ManagerService {
             max_iter,
         );
 
-        gstd::msg::send_bytes(checker, request, 0).expect("Failed to send points to checker");
+        msg::send_bytes(checker, request, 0).expect("Failed to send points to checker");
 
         self.get_mut().points_sent += points_chunk.len() as u32;
     }
