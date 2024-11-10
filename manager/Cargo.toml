@@ -19,5 +19,8 @@ sails-rs = { version = "=0.6.1", features = ["gtest"] }
 tokio = { version = "1.41", features = ["rt", "macros"] }
 mandelbrot-checker = { path = "../mandelbrot-checker", features = ["wasm-binary"] }
 mandelbrot-checker-client = { path = "../mandelbrot-checker/client" }
+hex = { version = "0.4.3", default-features = false }
+hex-literal = "0.4.1"
+
 [features]
 wasm-binary = []

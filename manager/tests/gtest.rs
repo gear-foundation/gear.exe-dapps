@@ -4,7 +4,7 @@ use sails_rs::{
     prelude::*,
 };
 
-use manager_client::traits::*;
+use manager_client::{traits::*, FixedPoint};
 use mandelbrot_checker_client::traits::*;
 const ACTOR_ID: u64 = 42;
 
@@ -28,23 +28,37 @@ async fn generate_and_store_points() {
         .await
         .unwrap();
 
+    println!(
+        "bytes {:?}",
+        hex::encode(manager_client::manager::io::GetResults::encode_call(
+            0, 20000
+        ))
+    );
+    println!(
+        "bytes {:?}",
+        hex::encode(manager_client::manager_factory::io::New::encode_call())
+    );
     let mut service_client = manager_client::Manager::new(remoting.clone());
 
     let width = 200;
     let height = 200;
 
-    let x_min = String::from("-2.0");
-    let x_max = String::from("1.0");
-    let y_min = String::from("-1.5");
-    let y_max = String::from("1.5");
+    let x_min = FixedPoint { num: -2, scale: 0 };
+    let x_max = FixedPoint { num: 1, scale: 0 };
+    let y_min = FixedPoint { num: -15, scale: 2 };
+    let y_max = FixedPoint { num: 15, scale: 1 };
     service_client
-        .generate_and_store_points(width, height, x_min, x_max, y_min, y_max) // Call service's method (see app/src/lib.rs:14)
+        .generate_and_store_points(width, height, x_min, x_max, y_min, y_max, 30_000) // Call service's method (see app/src/lib.rs:14)
         .send_recv(program_id)
+        .await;
+    remoting.system().run_next_block();
+    let points = service_client
+        .get_points_len()
+        .recv(program_id)
         .await
         .unwrap();
 
-    let points = service_client.get_points().recv(program_id).await.unwrap();
-    println!("{:?}", points.len());
+    println!("{:?}", points);
 }
 
 #[tokio::test]
@@ -154,12 +168,12 @@ async fn check_points_set() {
     let width = 200;
     let height = 200;
 
-    let x_min = String::from("-2.0");
-    let x_max = String::from("1.0");
-    let y_min = String::from("-1.5");
-    let y_max = String::from("1.5");
+    let x_min = FixedPoint { num: -2, scale: 0 };
+    let x_max = FixedPoint { num: 1, scale: 0 };
+    let y_min = FixedPoint { num: -15, scale: 2 };
+    let y_max = FixedPoint { num: 15, scale: 1 };
     service_client
-        .generate_and_store_points(width, height, x_min, x_max, y_min, y_max) // Call service's method (see app/src/lib.rs:14)
+        .generate_and_store_points(width, height, x_min, x_max, y_min, y_max, 30_000) // Call service's method (see app/src/lib.rs:14)
         .send_recv(program_id)
         .await
         .unwrap();
@@ -176,19 +190,4 @@ async fn check_points_set() {
     let msg_sent = service_client.points_sent().recv(program_id).await.unwrap();
 
     assert_eq!(msg_sent, 2000);
-
-    service_client
-        .check_points_set(1000, 20)
-        .send_recv(program_id)
-        .await
-        .unwrap();
-
-    service_client
-        .check_points_set(1000, 20)
-        .send_recv(program_id)
-        .await
-        .unwrap();
-
-    let results = service_client.get_results().recv(program_id).await.unwrap();
-    println!("{:?}", results);
 }

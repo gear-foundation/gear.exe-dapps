@@ -1,16 +1,39 @@
 #![no_std]
 
 use rust_decimal::Decimal;
-use sails_rs::{gstd::msg, prelude::*};
+use sails_rs::{
+    gstd::{exec, msg},
+    prelude::*,
+};
 static mut STATE: Option<ManagerState> = None;
-use mandelbrot_checker_client::mandelbrot_checker;
 #[derive(Default)]
 struct ManagerState {
     checkers: Vec<ActorId>,
-    points: Vec<(String, String)>,
-    results: Vec<(String, String, u32)>,
+    points: Vec<Point>,
+    results: Vec<Result>,
     points_sent: u32,
+    points_generated: u32,
 }
+
+#[derive(Encode, Decode, TypeInfo, Clone)]
+pub struct Point {
+    pub c_re: String,
+    pub c_im: String,
+}
+
+#[derive(Encode, Decode, TypeInfo, Clone)]
+pub struct Result {
+    pub c_re: String,
+    pub c_im: String,
+    pub iter: u32,
+}
+
+#[derive(Encode, Decode, TypeInfo, Clone)]
+pub struct FixedPoint {
+    pub num: i64,
+    pub scale: u32,
+}
+
 struct ManagerService(());
 
 impl ManagerService {
@@ -36,34 +59,69 @@ impl ManagerService {
         self.get_mut().checkers.extend(checkers);
     }
 
+    pub fn restart(&mut self) {
+        self.get_mut().points.clear();
+        self.get_mut().results.clear();
+        self.get_mut().points_generated = 0;
+        self.get_mut().points_sent = 0;
+    }
     pub fn generate_and_store_points(
         &mut self,
         width: u32,
         height: u32,
-        x_min: String,
-        x_max: String,
-        y_min: String,
-        y_max: String,
+        x_min: FixedPoint,
+        x_max: FixedPoint,
+        y_min: FixedPoint,
+        y_max: FixedPoint,
+        points_per_call: u32,
     ) {
-        let x_min = Decimal::from_str_exact(&x_min).expect("Invalid x_min format");
-        let x_max = Decimal::from_str_exact(&x_max).expect("Invalid x_max format");
-        let y_min = Decimal::from_str_exact(&y_min).expect("Invalid y_min format");
-        let y_max = Decimal::from_str_exact(&y_max).expect("Invalid y_max format");
+        let x_min_dec = Decimal::new(x_min.num, x_min.scale);
+        let x_max_dec = Decimal::new(x_max.num, x_max.scale);
+        let y_min_dec = Decimal::new(y_min.num, y_min.scale);
+        let y_max_dec = Decimal::new(y_max.num, y_max.scale);
 
-        let scale_x = (x_max - x_min) / Decimal::from(width);
-        let scale_y = (y_max - y_min) / Decimal::from(height);
+        let scale_x = (x_max_dec - x_min_dec) / Decimal::from(width);
+        let scale_y = (y_max_dec - y_min_dec) / Decimal::from(height);
 
-        self.get_mut().points.clear();
-        for x in 0..width {
-            for y in 0..height {
-                let c_re = x_min + Decimal::from(x) * scale_x;
-                let c_im = y_min + Decimal::from(y) * scale_y;
-                self.get_mut()
-                    .points
-                    .push((c_re.to_string(), c_im.to_string()));
+        let total_points = width * height;
+        let mut total_generated_points = self.get_mut().points.len() as u32;
+        let mut generated_in_call = 0;
+
+        let starting_x = total_generated_points / height;
+        let starting_y = total_generated_points % height;
+
+        for x in starting_x..width {
+            for y in if x == starting_x { starting_y } else { 0 }..height {
+                if generated_in_call >= points_per_call {
+                    break;
+                }
+
+                let c_re = x_min_dec + Decimal::from(x) * scale_x;
+                let c_im = y_min_dec + Decimal::from(y) * scale_y;
+                self.get_mut().points.push(Point {
+                    c_re: c_re.to_string(),
+                    c_im: c_im.to_string(),
+                });
+
+                generated_in_call += 1;
+                total_generated_points += 1;
+            }
+            if generated_in_call >= points_per_call {
+                break;
             }
         }
-        self.get_mut().points_sent = 0;
+
+        self.get_mut().points_generated = total_generated_points;
+
+        if total_generated_points < total_points {
+            let payload = [
+                "Manager".encode(),
+                "GenerateAndStorePoints".encode(),
+                (width, height, x_min, x_max, y_min, y_max, points_per_call).encode(),
+            ]
+            .concat();
+            msg::send_bytes(exec::program_id(), payload, 0).expect("Error during msg sending");
+        }
     }
 
     pub fn check_points_set(&mut self, max_iter: u32, batch_size: u32) {
@@ -80,6 +138,15 @@ impl ManagerService {
             }
             self.send_next_batch(*checker, max_iter, batch_size);
         }
+        if self.get().points_sent < self.get().points.len() as u32 {
+            let payload = [
+                "Manager".encode(),
+                "CheckPointsSet".encode(),
+                (max_iter, batch_size).encode(),
+            ]
+            .concat();
+            msg::send_bytes(exec::program_id(), payload, 0).expect("Error during msg sending");
+        }
     }
 
     pub fn send_next_batch(&mut self, checker: ActorId, max_iter: u32, batch_size: u32) {
@@ -92,27 +159,36 @@ impl ManagerService {
         }
 
         let points_chunk = points[start..end].to_vec();
-        let request = mandelbrot_checker::io::CheckMandelbrotPoints::encode_call(
-            points_chunk.clone(),
-            max_iter,
-        );
-
-        msg::send_bytes(checker, request, 0).expect("Failed to send points to checker");
 
         self.get_mut().points_sent += points_chunk.len() as u32;
+
+        let payload = [
+            "MandelbrotChecker".encode(),
+            "CheckMandelbrotPoints".encode(),
+            (points_chunk, max_iter).encode(),
+        ]
+        .concat();
+
+        msg::send_bytes(checker, payload, 0).expect("Failed to send points to checker");
     }
 
-    pub fn result_calculated(&mut self, points: Vec<(String, String)>, results: Vec<u32>) {
+    pub fn result_calculated(&mut self, points: Vec<Point>, results: Vec<u32>) {
         for (i, iterations) in results.into_iter().enumerate() {
             let point = &points[i];
-            self.get_mut()
-                .results
-                .push((point.0.clone(), point.1.clone(), iterations));
+            self.get_mut().results.push(Result {
+                c_re: point.c_re.clone(),
+                c_im: point.c_im.clone(),
+                iter: iterations,
+            });
         }
     }
 
-    pub fn get_points(&self) -> Vec<(String, String)> {
+    pub fn get_points(&self) -> Vec<Point> {
         self.get().points.clone()
+    }
+
+    pub fn get_points_len(&self) -> u32 {
+        self.get().points.len() as u32
     }
 
     pub fn get_checkers(&self) -> Vec<ActorId> {
@@ -123,8 +199,19 @@ impl ManagerService {
         self.get().points_sent
     }
 
-    pub fn get_results(&self) -> Vec<(String, String, u32)> {
-        self.get().results.clone()
+    pub fn get_results(&self, start_index: u32, end_index: u32) -> Vec<Result> {
+        let results = &self.get().results;
+        if start_index >= results.len() as u32 {
+            return Vec::new();
+        }
+
+        let end_index = if end_index < results.len() as u32 {
+            end_index
+        } else {
+            results.len() as u32
+        };
+
+        results[start_index as usize..end_index as usize].to_vec()
     }
 }
 

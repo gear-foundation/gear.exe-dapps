@@ -4,19 +4,25 @@ use rust_decimal::Decimal;
 use sails_rs::{gstd::msg, prelude::*};
 struct MandelbrotCheckerService(());
 
+#[derive(Encode, Decode, TypeInfo, Clone)]
+pub struct Point {
+    pub c_re: String,
+    pub c_im: String,
+}
+
 #[sails_rs::service]
 impl MandelbrotCheckerService {
     pub fn new() -> Self {
         Self(())
     }
 
-    pub fn check_mandelbrot_points(&mut self, points: Vec<(String, String)>, max_iter: u32) {
+    pub fn check_mandelbrot_points(&mut self, points: Vec<Point>, max_iter: u32) {
         let results: Vec<u32> = points
             .clone()
             .into_iter()
-            .map(|(c_re, c_im)| {
-                let c_re = Decimal::from_str_exact(&c_re).expect("Error: convert to Decimal");
-                let c_im = Decimal::from_str_exact(&c_im).expect("Error: convert to Decimal");
+            .map(|point| {
+                let c_re = Decimal::from_str_exact(&point.c_re).expect("Error: convert to Decimal");
+                let c_im = Decimal::from_str_exact(&point.c_im).expect("Error: convert to Decimal");
 
                 self.check_mandelbrot(c_re, c_im, max_iter)
             })
