@@ -23,42 +23,43 @@ async fn generate_and_store_points() {
     let program_factory = manager_client::ManagerFactory::new(remoting.clone());
 
     let program_id = program_factory
-        .new() // Call program's constructor (see app/src/lib.rs:29)
+        .new()
         .send_recv(program_code_id, b"salt")
         .await
         .unwrap();
 
-    println!(
-        "bytes {:?}",
-        hex::encode(manager_client::manager::io::GetResults::encode_call(
-            0, 20000
-        ))
-    );
-    println!(
-        "bytes {:?}",
-        hex::encode(manager_client::manager_factory::io::New::encode_call())
-    );
     let mut service_client = manager_client::Manager::new(remoting.clone());
 
-    let width = 200;
-    let height = 200;
+    let width = 600;
+    let height = 600;
 
-    let x_min = FixedPoint { num: -2, scale: 0 };
-    let x_max = FixedPoint { num: 1, scale: 0 };
-    let y_min = FixedPoint { num: -15, scale: 2 };
-    let y_max = FixedPoint { num: 15, scale: 1 };
-    service_client
-        .generate_and_store_points(width, height, x_min, x_max, y_min, y_max, 30_000) // Call service's method (see app/src/lib.rs:14)
-        .send_recv(program_id)
-        .await;
-    remoting.system().run_next_block();
-    let points = service_client
+    for _i in 0..12 {
+        service_client
+            .generate_and_store_points(
+                width,
+                height,
+                FixedPoint { num: -2, scale: 0 },
+                FixedPoint { num: 1, scale: 0 },
+                FixedPoint { num: -15, scale: 2 },
+                FixedPoint { num: 15, scale: 1 },
+                30_000,
+                false,
+                true,
+                1000,
+                20,
+            )
+            .send_recv(program_id)
+            .await
+            .unwrap();
+    }
+
+    let points_len = service_client
         .get_points_len()
         .recv(program_id)
         .await
         .unwrap();
 
-    println!("{:?}", points);
+    assert_eq!(points_len, 360_000);
 }
 
 #[tokio::test]
@@ -117,7 +118,7 @@ async fn add_checkers() {
 async fn check_points_set() {
     let system = System::new();
     system.init_logger();
-    system.mint_to(ACTOR_ID, 200_000_000_000_000);
+    system.mint_to(ACTOR_ID, 1_000_000_000_000_000);
 
     let remoting = GTestRemoting::new(system, ACTOR_ID.into());
     remoting.system().init_logger();
@@ -165,29 +166,63 @@ async fn check_points_set() {
 
     assert_eq!(checkers.len(), 100);
 
-    let width = 200;
-    let height = 200;
+    let width = 600;
+    let height = 600;
 
-    let x_min = FixedPoint { num: -2, scale: 0 };
-    let x_max = FixedPoint { num: 1, scale: 0 };
-    let y_min = FixedPoint { num: -15, scale: 2 };
-    let y_max = FixedPoint { num: 15, scale: 1 };
-    service_client
-        .generate_and_store_points(width, height, x_min, x_max, y_min, y_max, 30_000) // Call service's method (see app/src/lib.rs:14)
-        .send_recv(program_id)
+    for _i in 0..12 {
+        service_client
+            .generate_and_store_points(
+                width,
+                height,
+                FixedPoint { num: -2, scale: 0 },
+                FixedPoint { num: 1, scale: 0 },
+                FixedPoint { num: -15, scale: 2 },
+                FixedPoint { num: 15, scale: 1 },
+                30_000,
+                false,
+                false,
+                0,
+                0,
+            )
+            .send_recv(program_id)
+            .await
+            .unwrap();
+    }
+
+    let points_len = service_client
+        .get_points_len()
+        .recv(program_id)
         .await
         .unwrap();
 
-    let points = service_client.get_points().recv(program_id).await.unwrap();
-    assert_eq!(points.len(), 40000);
+    assert_eq!(points_len, 360_000);
 
-    service_client
-        .check_points_set(1000, 20)
-        .send_recv(program_id)
-        .await
-        .unwrap();
+    for _i in 0..30 {
+        println!("{:?}", _i);
+        service_client
+            .check_points_set(1000, 10, false)
+            .send_recv(program_id)
+            .await
+            .unwrap();
+        remoting.system().run_next_block();
+    }
 
     let msg_sent = service_client.points_sent().recv(program_id).await.unwrap();
 
-    assert_eq!(msg_sent, 2000);
+    assert_eq!(msg_sent, 30_000);
+
+    let point_results = service_client
+        .get_results(0, 30_000)
+        .recv(program_id)
+        .await
+        .unwrap();
+    if point_results.iter().all(|point| point.checked) {
+        println!("All points are checked!");
+    } else {
+        let unchecked_count = point_results.iter().filter(|point| !point.checked).count();
+        println!(
+            "Some points are not checked. Unchecked points: {}",
+            unchecked_count
+        );
+    }
 }

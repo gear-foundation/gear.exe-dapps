@@ -6,8 +6,15 @@ struct MandelbrotCheckerService(());
 
 #[derive(Encode, Decode, TypeInfo, Clone)]
 pub struct Point {
-    pub c_re: String,
-    pub c_im: String,
+    pub index: u32,
+    pub c_re: FixedPoint,
+    pub c_im: FixedPoint,
+}
+
+#[derive(Encode, Decode, TypeInfo, Clone)]
+pub struct FixedPoint {
+    pub num: i64,
+    pub scale: u32,
 }
 
 #[sails_rs::service]
@@ -17,20 +24,18 @@ impl MandelbrotCheckerService {
     }
 
     pub fn check_mandelbrot_points(&mut self, points: Vec<Point>, max_iter: u32) {
-        let results: Vec<u32> = points
-            .clone()
+        let (indexes, results): (Vec<u32>, Vec<u32>) = points
             .into_iter()
             .map(|point| {
-                let c_re = Decimal::from_str_exact(&point.c_re).expect("Error: convert to Decimal");
-                let c_im = Decimal::from_str_exact(&point.c_im).expect("Error: convert to Decimal");
-
-                self.check_mandelbrot(c_re, c_im, max_iter)
+                let c_re = Decimal::new(point.c_re.num, point.c_re.scale);
+                let c_im = Decimal::new(point.c_im.num, point.c_im.scale);
+                (point.index, self.check_mandelbrot(c_re, c_im, max_iter))
             })
-            .collect();
+            .unzip();
         let payload = [
             "Manager".encode(),
             "ResultCalculated".encode(),
-            (points, results).encode(),
+            (indexes, results).encode(),
         ]
         .concat();
         msg::send_bytes(msg::source(), payload, 0).expect("Error during msg sending");
