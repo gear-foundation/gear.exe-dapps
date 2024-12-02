@@ -16,3 +16,4 @@ sails-rs = { version = "=0.6.1", features = ["debug", "ethexe"] }
 manager-client = { path = "/Users/luisa/manager/manager/client" }
 hex = { version = "0.4.3", default-features = false }
 hex-literal = "0.4.1"
+image = "0.25.4"
