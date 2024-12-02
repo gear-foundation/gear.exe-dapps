@@ -3,7 +3,7 @@ use sails_rs::{
     gtest::{calls::*, System},
 };
 
-use mandelbrot_checker_client::{traits::*, Point};
+use mandelbrot_checker_client::{traits::*, FixedPoint, Point};
 
 const ACTOR_ID: u64 = 42;
 
@@ -34,124 +34,169 @@ async fn do_something_works() {
 
     let points = vec![
         Point {
-            c_re: "0.25".to_string(),
-            c_im: "-0.135".to_string(),
+            index: 0,
+            c_re: FixedPoint { num: 25, scale: 2 },
+            c_im: FixedPoint {
+                num: -135,
+                scale: 3,
+            },
         },
         Point {
-            c_re: "0.25".to_string(),
-            c_im: "0.54".to_string(),
+            index: 1,
+            c_re: FixedPoint { num: 25, scale: 2 },
+            c_im: FixedPoint { num: 54, scale: 2 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.135".to_string(),
+            index: 2,
+            c_re: FixedPoint { num: 355, scale: 3 },
+            c_im: FixedPoint { num: 135, scale: 3 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.27".to_string(),
+            index: 3,
+            c_re: FixedPoint {
+                num: -135,
+                scale: 3,
+            },
+            c_im: FixedPoint { num: 27, scale: 2 },
         },
         Point {
-            c_re: "0.135".to_string(),
-            c_im: "0.265".to_string(),
+            index: 4,
+            c_re: FixedPoint { num: 135, scale: 3 },
+            c_im: FixedPoint { num: 265, scale: 3 },
         },
         Point {
-            c_re: "0.265".to_string(),
-            c_im: "0.248".to_string(),
+            index: 5,
+            c_re: FixedPoint { num: 265, scale: 3 },
+            c_im: FixedPoint { num: 248, scale: 3 },
         },
         Point {
-            c_re: "0.295".to_string(),
-            c_im: "0.24".to_string(),
+            index: 6,
+            c_re: FixedPoint { num: 295, scale: 3 },
+            c_im: FixedPoint { num: 24, scale: 2 },
         },
         Point {
-            c_re: "0.31".to_string(),
-            c_im: "0.135".to_string(),
+            index: 7,
+            c_re: FixedPoint { num: 31, scale: 2 },
+            c_im: FixedPoint { num: 135, scale: 3 },
         },
         Point {
-            c_re: "0.25".to_string(),
-            c_im: "-0.135".to_string(),
+            index: 8,
+            c_re: FixedPoint { num: 25, scale: 2 },
+            c_im: FixedPoint {
+                num: -135,
+                scale: 3,
+            },
         },
         Point {
-            c_re: "0.25".to_string(),
-            c_im: "0.54".to_string(),
+            index: 9,
+            c_re: FixedPoint { num: 25, scale: 2 },
+            c_im: FixedPoint { num: 54, scale: 2 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.135".to_string(),
+            index: 10,
+            c_re: FixedPoint { num: 355, scale: 3 },
+            c_im: FixedPoint { num: 135, scale: 3 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.27".to_string(),
+            index: 11,
+            c_re: FixedPoint { num: 355, scale: 3 },
+            c_im: FixedPoint { num: 27, scale: 2 },
         },
         Point {
-            c_re: "0.135".to_string(),
-            c_im: "0.265".to_string(),
+            index: 12,
+            c_re: FixedPoint { num: 135, scale: 3 },
+            c_im: FixedPoint { num: 265, scale: 3 },
         },
         Point {
-            c_re: "0.265".to_string(),
-            c_im: "0.248".to_string(),
+            index: 13,
+            c_re: FixedPoint { num: 265, scale: 3 },
+            c_im: FixedPoint { num: 248, scale: 3 },
         },
         Point {
-            c_re: "0.295".to_string(),
-            c_im: "0.24".to_string(),
+            index: 14,
+            c_re: FixedPoint { num: 295, scale: 3 },
+            c_im: FixedPoint { num: 24, scale: 2 },
         },
         Point {
-            c_re: "0.31".to_string(),
-            c_im: "0.135".to_string(),
+            index: 15,
+            c_re: FixedPoint { num: 31, scale: 2 },
+            c_im: FixedPoint { num: 135, scale: 3 },
         },
         Point {
-            c_re: "0.25".to_string(),
-            c_im: "-0.135".to_string(),
+            index: 16,
+            c_re: FixedPoint { num: 25, scale: 2 },
+            c_im: FixedPoint {
+                num: -135,
+                scale: 3,
+            },
         },
         Point {
-            c_re: "0.25".to_string(),
-            c_im: "0.54".to_string(),
+            index: 17,
+            c_re: FixedPoint { num: 25, scale: 2 },
+            c_im: FixedPoint { num: 54, scale: 2 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.135".to_string(),
+            index: 18,
+            c_re: FixedPoint { num: 355, scale: 3 },
+            c_im: FixedPoint { num: 135, scale: 3 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.27".to_string(),
+            index: 19,
+            c_re: FixedPoint { num: 355, scale: 3 },
+            c_im: FixedPoint { num: 27, scale: 2 },
         },
         Point {
-            c_re: "0.135".to_string(),
-            c_im: "0.265".to_string(),
+            index: 20,
+            c_re: FixedPoint { num: 135, scale: 3 },
+            c_im: FixedPoint { num: 265, scale: 3 },
         },
         Point {
-            c_re: "0.265".to_string(),
-            c_im: "0.248".to_string(),
+            index: 21,
+            c_re: FixedPoint { num: 265, scale: 3 },
+            c_im: FixedPoint { num: 248, scale: 3 },
         },
         Point {
-            c_re: "0.295".to_string(),
-            c_im: "0.24".to_string(),
+            index: 22,
+            c_re: FixedPoint { num: 295, scale: 3 },
+            c_im: FixedPoint { num: 24, scale: 2 },
         },
         Point {
-            c_re: "0.31".to_string(),
-            c_im: "0.135".to_string(),
+            index: 23,
+            c_re: FixedPoint { num: 31, scale: 2 },
+            c_im: FixedPoint { num: 135, scale: 3 },
         },
         Point {
-            c_re: "0.25".to_string(),
-            c_im: "-0.135".to_string(),
+            index: 24,
+            c_re: FixedPoint { num: 25, scale: 2 },
+            c_im: FixedPoint {
+                num: -135,
+                scale: 3,
+            },
         },
         Point {
-            c_re: "0.25".to_string(),
-            c_im: "0.54".to_string(),
+            index: 25,
+            c_re: FixedPoint { num: 25, scale: 2 },
+            c_im: FixedPoint { num: 54, scale: 2 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.135".to_string(),
+            index: 25,
+            c_re: FixedPoint { num: 355, scale: 3 },
+            c_im: FixedPoint { num: 135, scale: 3 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.27".to_string(),
+            index: 26,
+            c_re: FixedPoint { num: 355, scale: 3 },
+            c_im: FixedPoint { num: 25, scale: 2 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.135".to_string(),
+            index: 27,
+            c_re: FixedPoint { num: 355, scale: 3 },
+            c_im: FixedPoint { num: 135, scale: 3 },
         },
         Point {
-            c_re: "0.355".to_string(),
-            c_im: "0.27".to_string(),
+            index: 28,
+            c_re: FixedPoint { num: 355, scale: 3 },
+            c_im: FixedPoint { num: 25, scale: 2 },
         },
     ];
     service_client
