@@ -1,0 +1,21 @@
+[package]
+name = "mandelbrot-checker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mandelbrot-checker-app = { path = "app" }
+
+[build-dependencies]
+mandelbrot-checker-app = { path = "app" }
+sails-rs = { version = "=0.6.1", features = ["wasm-builder","ethexe"] }
+sails-idl-gen = "=0.6.1"
+
+[dev-dependencies]
+mandelbrot-checker = { path = ".", features = ["wasm-binary"] }
+mandelbrot-checker-client = { path = "client" }
+sails-rs = { version = "=0.6.1", features = ["gtest"] }
+tokio = { version = "1.41", features = ["rt", "macros"] }
+
+[features]
+wasm-binary = []
