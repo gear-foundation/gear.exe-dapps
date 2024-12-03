@@ -1,0 +1,11 @@
+[package]
+name = "digit-recognition-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sails-rs = { version = "0.6.3", features = ["debug"] }
+rust_decimal = { version = "1.36.0", default-features = false, features = ["maths"] }
+rust_decimal_macros = { version = "1.36.0" }
+parity-scale-codec = { version = "3.6", default-features = false }
+scale-info = { version = "2.11", default-features = false }
