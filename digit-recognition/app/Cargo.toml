@@ -9,3 +9,4 @@ rust_decimal = { version = "1.36.0", default-features = false, features = ["math
 rust_decimal_macros = { version = "1.36.0" }
 parity-scale-codec = { version = "3.6", default-features = false }
 scale-info = { version = "2.11", default-features = false }
+ndarray = { version = "0.16.1", default-features = false }
