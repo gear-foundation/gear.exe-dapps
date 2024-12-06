@@ -1,27 +1,29 @@
 use digit_recognition_client::{traits::*, FixedPoint};
 use eframe::egui;
 use eframe::App;
+use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageBuffer};
 use sails_rs::{
     calls::*,
     gtest::{calls::*, System},
 };
 use std::sync::{Arc, Mutex};
-use image::{DynamicImage, GenericImageView, ImageBuffer, imageops::FilterType};
 
 const ACTOR_ID: u64 = 42;
 
-fn downscale_canvas(canvas: &[u8], high_width: usize, high_height: usize, low_width: u32, low_height: u32) -> Vec<u8> {
+fn downscale_canvas(
+    canvas: &[u8],
+    high_width: usize,
+    high_height: usize,
+    low_width: u32,
+    low_height: u32,
+) -> Vec<u8> {
     let high_res_image = DynamicImage::ImageLuma8(
         ImageBuffer::from_raw(high_width as u32, high_height as u32, canvas.to_vec())
             .expect("Failed to create high-resolution image buffer"),
     );
     let low_res_image = high_res_image.resize_exact(low_width, low_height, FilterType::Lanczos3);
 
-    low_res_image
-        .to_luma8()
-        .pixels()
-        .map(|p| p.0[0])
-        .collect()
+    low_res_image.to_luma8().pixels().map(|p| p.0[0]).collect()
 }
 
 fn main() {
@@ -63,7 +65,7 @@ async fn async_main() {
     let program_factory = digit_recognition_client::DigitRecognitionFactory::new(remoting.clone());
 
     let program_id = program_factory
-        .new() 
+        .new()
         .send_recv(program_code_id, b"salt")
         .await
         .unwrap();
@@ -71,11 +73,19 @@ async fn async_main() {
     let mut service_client = digit_recognition_client::DigitRecognition::new(remoting.clone());
 
     let result = service_client
-        .predict(pixels) // Call service's method
+        .predict(pixels.to_vec()) // Call service's method
         .send_recv(program_id)
         .await
         .unwrap();
 
+    service_client
+        .conv_2_d_single()
+        .send_recv(program_id)
+        .await
+        .unwrap();
+
+    let result = service_client.finish().send_recv(program_id).await.unwrap();
+   
     let result_f64: Vec<f64> = result.iter().map(|fp| fixed_point_to_float(fp)).collect();
     println!("result f64 {:?}", result_f64.clone());
     if let Some((predicted_digit, &max_probability)) = result_f64
@@ -94,14 +104,14 @@ async fn async_main() {
 }
 
 struct MnistApp {
-    high_res_canvas: Vec<u8>, 
-    canvas_size: (usize, usize), 
-    low_res_size: (u32, u32),    
+    high_res_canvas: Vec<u8>,
+    canvas_size: (usize, usize),
+    low_res_size: (u32, u32),
     brush_size: usize,
     brush_intensity: u8,
     done: Arc<Mutex<bool>>,
     pixels: Arc<Mutex<Vec<u16>>>,
-    last_mouse_pos: Option<(usize, usize)>
+    last_mouse_pos: Option<(usize, usize)>,
 }
 
 impl App for MnistApp {
@@ -174,13 +184,13 @@ impl MnistApp {
         if let Some((prev_x, prev_y)) = self.last_mouse_pos {
             let dx = px as isize - prev_x as isize;
             let dy = py as isize - prev_y as isize;
-            let steps = dx.abs().max(dy.abs()); 
-        
+            let steps = dx.abs().max(dy.abs());
+
             if steps > 0 {
                 for step in 0..=steps {
                     let interp_x = prev_x as isize + (dx * step / steps) as isize;
                     let interp_y = prev_y as isize + (dy * step / steps) as isize;
-        
+
                     self.apply_brush_to_point(interp_x as usize, interp_y as usize);
                 }
             }
@@ -202,7 +212,8 @@ impl MnistApp {
 
                 if x < width && y < height {
                     let idx = y * width + x;
-                    self.high_res_canvas[idx] = self.high_res_canvas[idx].saturating_add(self.brush_intensity);
+                    self.high_res_canvas[idx] =
+                        self.high_res_canvas[idx].saturating_add(self.brush_intensity);
                 }
             }
         }
