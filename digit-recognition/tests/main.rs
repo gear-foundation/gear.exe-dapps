@@ -1,7 +1,7 @@
 use digit_recognition_client::{traits::*, FixedPoint};
 use eframe::egui;
 use eframe::App;
-use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageBuffer};
+use image::{imageops::FilterType, DynamicImage, ImageBuffer};
 use sails_rs::{
     calls::*,
     gtest::{calls::*, System},
@@ -72,34 +72,27 @@ async fn async_main() {
 
     let mut service_client = digit_recognition_client::DigitRecognition::new(remoting.clone());
 
-    let result = service_client
-        .predict(pixels.to_vec()) // Call service's method
+    service_client
+        .predict(pixels.to_vec(), false)
         .send_recv(program_id)
         .await
         .unwrap();
 
     service_client
-        .conv_2_d_single()
+        .conv_2(false)
         .send_recv(program_id)
         .await
         .unwrap();
 
-    let result = service_client.finish().send_recv(program_id).await.unwrap();
-   
+    service_client.finish().send_recv(program_id).await.unwrap();
+
+    let result = service_client.result().recv(program_id).await.unwrap();
+
     let result_f64: Vec<f64> = result.iter().map(|fp| fixed_point_to_float(fp)).collect();
-    println!("result f64 {:?}", result_f64.clone());
-    if let Some((predicted_digit, &max_probability)) = result_f64
-        .iter()
-        .enumerate()
-        .max_by(|(_, prob1), (_, prob2)| prob1.partial_cmp(prob2).unwrap())
-    {
-        println!(
-            "Predicted digit: {}, with probability: {:?}",
-            predicted_digit,
-            max_probability * 100.0
-        );
-    } else {
-        println!("Error: Probability array is empty");
+    for (index, &prob) in result_f64.iter().enumerate() {
+        if prob > 0.05 {
+            println!("Digit {} predicted with {:.2}% probability", index, prob * 100.0);
+        }
     }
 }
 
@@ -118,7 +111,6 @@ impl App for MnistApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             if *self.done.lock().unwrap() {
-                println!("Stop drawing");
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                 return;
             }
@@ -179,7 +171,6 @@ impl MnistApp {
     }
 
     fn apply_brush(&mut self, px: usize, py: usize) {
-        let (width, height) = self.canvas_size;
 
         if let Some((prev_x, prev_y)) = self.last_mouse_pos {
             let dx = px as isize - prev_x as isize;
