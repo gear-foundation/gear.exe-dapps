@@ -1,0 +1,16 @@
+[package]
+name = "cnn-cats-dogs-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mockall = { version = "0.12", optional = true }
+sails-rs =  { path = "../../../sails/rs" }
+
+[build-dependencies]
+cnn-cats-dogs-app = { path = "../app" }
+sails-client-gen =  { path = "../../../sails/rs/client-gen" }
+sails-idl-gen =  { path = "../../../sails/rs/idl-gen" }
+
+[features]
+mocks = ["sails-rs/mockall", "dep:mockall"]
