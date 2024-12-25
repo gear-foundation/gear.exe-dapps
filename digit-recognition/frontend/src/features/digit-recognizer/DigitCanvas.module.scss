@@ -1,0 +1,30 @@
+.wrapper {
+  border: 1px solid #ffffff29;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.drawArea {
+  position: relative;
+  background: #ffffff0f;
+  border-radius: 50%;
+  display: block;
+  margin: 0 auto;
+  width: 208px;
+  height: 208px;
+}
+
+.drawHint {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #ffffff;
+}
