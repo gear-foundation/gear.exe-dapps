@@ -1,5 +1,5 @@
+import { clsx } from "clsx";
 import styles from "./Card.module.scss";
-import { cn } from "@/lib/utils";
 
 type Props = {
   title: string;
@@ -24,10 +24,10 @@ export const Card = ({
       </div>
 
       <div className={styles.canvas}>
-        <div className={cn(styles.corner, styles.topLeft)} />
-        <div className={cn(styles.corner, styles.topRight)} />
-        <div className={cn(styles.corner, styles.bottomLeft)} />
-        <div className={cn(styles.corner, styles.bottomRight)} />
+        <div className={clsx(styles.corner, styles.topLeft)} />
+        <div className={clsx(styles.corner, styles.topRight)} />
+        <div className={clsx(styles.corner, styles.bottomLeft)} />
+        <div className={clsx(styles.corner, styles.bottomRight)} />
         {canvasSlot}
       </div>
 
