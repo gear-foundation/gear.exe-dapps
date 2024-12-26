@@ -1,8 +1,9 @@
-import "./globals.css";
+import "./index.css";
 import { useAccount } from "wagmi";
 
 import { WalletButton, Header, Layout } from "@/components";
 import { Recognition } from "./components/recognition/Recognition";
+import styles from "./App.module.scss";
 
 function App() {
   const ethAccount = useAccount();
@@ -12,7 +13,7 @@ function App() {
     <>
       <Header />
       {!isConnected && (
-        <Layout className="flex flex-col items-center justify-center gap-12 h-screen-header pt-0">
+        <Layout className={styles.connectionWrapper}>
           <h1>AI Image Recognition</h1>
 
           <WalletButton />

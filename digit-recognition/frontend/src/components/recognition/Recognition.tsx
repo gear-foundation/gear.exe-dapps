@@ -5,7 +5,7 @@ import styles from "./Recognition.module.scss";
 export const Recognition = () => {
   return (
     <Layout>
-      <h1 className={styles.tittle}>AI Image Recognition</h1>
+      <h1 className={styles.title}>AI Image Recognition</h1>
 
       <p className={styles.description}>
         //_Draw a digit or upload an image to experience the power of AI.
