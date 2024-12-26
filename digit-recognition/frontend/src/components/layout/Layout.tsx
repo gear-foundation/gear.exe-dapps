@@ -1,5 +1,5 @@
+import { clsx } from "clsx";
 import { PropsWithChildren } from "react";
-import { cn } from "@/lib/utils";
 import styles from "./Layout.module.scss";
 
 type Props = PropsWithChildren & {
@@ -7,5 +7,5 @@ type Props = PropsWithChildren & {
 };
 
 export const Layout = ({ children, className }: Props) => {
-  return <div className={cn(styles.container, className)}>{children}</div>;
+  return <div className={clsx(styles.container, className)}>{children}</div>;
 };

@@ -1,12 +1,5 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
 export { mergeRefs } from "./merge-refs";
 export { isMobileDevice, isMobile } from "./device-detection";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export const copyToClipboard = async ({
   value,
