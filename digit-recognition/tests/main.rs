@@ -2,11 +2,16 @@ use digit_recognition_client::{traits::*, FixedPoint};
 use eframe::egui;
 use eframe::App;
 use image::{imageops::FilterType, DynamicImage, ImageBuffer};
+use rust_decimal::Decimal;
+use sails_rs::Encode;
 use sails_rs::{
     calls::*,
     gtest::{calls::*, System},
 };
 use std::sync::{Arc, Mutex};
+pub mod weights_and_biases;
+use ndarray::Array1;
+use weights_and_biases::*;
 
 const ACTOR_ID: u64 = 42;
 
@@ -72,6 +77,54 @@ async fn async_main() {
 
     let mut service_client = digit_recognition_client::DigitRecognition::new(remoting.clone());
 
+    let conv1_weight = array4_to_fixed_points(CONV1_WEIGHT);
+    let conv1_bias = Array1::from(CONV1_BIAS.to_vec()).mapv(|value| FixedPoint {
+        num: value.mantissa(),
+        scale: value.scale(),
+    });
+
+    let payload = ["DigitRecognition".encode(), "SetConv1Weights".encode(), (conv1_weight.clone(), conv1_bias.clone().to_vec()).encode()].concat();
+    println!("CONV1 PAYLOAD {:?}", hex::encode(payload));
+    service_client
+        .set_conv_1_weights(conv1_weight, conv1_bias.to_vec())
+        .send_recv(program_id)
+        .await
+        .unwrap();
+
+    let conv2_weight = array4_to_fixed_points(CONV2_WEIGHT);
+    let conv2_bias = Array1::from(CONV2_BIAS.to_vec()).mapv(|value| FixedPoint {
+        num: value.mantissa(),
+        scale: value.scale(),
+    });
+    service_client
+        .set_conv_2_weights(conv2_weight, conv2_bias.to_vec())
+        .send_recv(program_id)
+        .await
+        .unwrap();
+
+    let fc1_weight = array2_to_fixed_points(FC1_WEIGHT);
+    let fc1_bias = Array1::from(FC1_BIAS.to_vec()).mapv(|value| FixedPoint {
+        num: value.mantissa(),
+        scale: value.scale(),
+    });
+    service_client
+        .set_fc_1_weights(fc1_weight, fc1_bias.to_vec())
+        .send_recv(program_id)
+        .await
+        .unwrap();
+
+    let fc2_weight = array2_to_fixed_points(FC2_WEIGHT);
+    let fc2_bias = Array1::from(FC2_BIAS.to_vec()).mapv(|value| FixedPoint {
+        num: value.mantissa(),
+        scale: value.scale(),
+    });
+
+    service_client
+        .set_fc_2_weights(fc2_weight, fc2_bias.to_vec())
+        .send_recv(program_id)
+        .await
+        .unwrap();
+
     service_client
         .predict(pixels.to_vec(), false)
         .send_recv(program_id)
@@ -91,9 +144,45 @@ async fn async_main() {
     let result_f64: Vec<f64> = result.iter().map(|fp| fixed_point_to_float(fp)).collect();
     for (index, &prob) in result_f64.iter().enumerate() {
         if prob > 0.05 {
-            println!("Digit {} predicted with {:.2}% probability", index, prob * 100.0);
+            println!(
+                "Digit {} predicted with {:.2}% probability",
+                index,
+                prob * 100.0
+            );
         }
     }
+}
+
+fn array4_to_fixed_points<const M: usize, const N: usize, const I: usize, const J: usize>(
+    array: [[[[Decimal; M]; N]; I]; J],
+) -> Vec<FixedPoint> {
+    array
+        .iter()
+        .flat_map(|layer| {
+            layer.iter().flat_map(|matrix| {
+                matrix.iter().flat_map(|row| {
+                    row.iter().map(move |&value| FixedPoint {
+                        num: value.mantissa(),
+                        scale: value.scale(),
+                    })
+                })
+            })
+        })
+        .collect()
+}
+
+pub fn array2_to_fixed_points<const M: usize, const N: usize>(
+    array: [[Decimal; M]; N],
+) -> Vec<FixedPoint> {
+    array
+        .iter()
+        .flat_map(|row| {
+            row.iter().map(|&value| FixedPoint {
+                num: value.mantissa(),
+                scale: value.scale(),
+            })
+        })
+        .collect()
 }
 
 struct MnistApp {
@@ -171,7 +260,6 @@ impl MnistApp {
     }
 
     fn apply_brush(&mut self, px: usize, py: usize) {
-
         if let Some((prev_x, prev_y)) = self.last_mouse_pos {
             let dx = px as isize - prev_x as isize;
             let dy = py as isize - prev_y as isize;

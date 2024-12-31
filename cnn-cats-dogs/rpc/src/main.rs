@@ -45,8 +45,9 @@ pub struct Point {
 async fn main() -> Result<(), Box<dyn Error>> {
     let client = Client::new();
 
-    let payload = hex::encode(cnn_cats_dogs_client::cnn_cats_dogs::io::GetIm2ColDone::encode_call());
-    let program_id = "0xecc4401497e73cda9794521afe63f14e6d814a44";
+    let payload =
+        hex::encode(cnn_cats_dogs_client::cnn_cats_dogs::io::GetIm2ColDone::encode_call());
+    let program_id = "0x7D5321eC8FBb7dA141113d35f7795ade4598A50F";
     let params = json!({
         "jsonrpc": "2.0",
         "id": 1,
@@ -60,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     });
 
     //let url = "http://135.181.114.201:9944";
-   let url = "http://localhost:9944";
+    let url = "http://localhost:9944";
 
     let response = client
         .post(url)
@@ -72,11 +73,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let text = response.json::<Ip>().await?;
 
     let bytes = hex::decode(&text.result.payload[2..]).unwrap();
-    println!("{:?}", cnn_cats_dogs_client::cnn_cats_dogs::io::GetIm2ColDone::decode_reply(bytes).unwrap());
+    println!(
+        "{:?}",
+        cnn_cats_dogs_client::cnn_cats_dogs::io::GetIm2ColDone::decode_reply(bytes).unwrap()
+    );
 
-
-    let payload = hex::encode(cnn_cats_dogs_client::cnn_cats_dogs::io::GetProcessedCol::encode_call());
-    let program_id = "0x0E114f423dCb2aD52a056a55876CA4aa894c4cB4";
+    let payload =
+        hex::encode(cnn_cats_dogs_client::cnn_cats_dogs::io::GetProcessedCol::encode_call());
+    let program_id = "c";
     let params = json!({
         "jsonrpc": "2.0",
         "id": 1,
@@ -96,12 +100,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .send()
         .await?;
 
-    println!("{:?}", response);
+    //  println!("{:?}", response);
 
     let text = response.json::<Ip>().await?;
 
     let bytes = hex::decode(&text.result.payload[2..]).unwrap();
-    println!("{:?}", cnn_cats_dogs_client::cnn_cats_dogs::io::GetProcessedCol::decode_reply(bytes).unwrap());
+    // println!("{:?}", cnn_cats_dogs_client::cnn_cats_dogs::io::GetProcessedCol::decode_reply(bytes).unwrap());
 
     // let mut file = File::create("checkers.txt")?;
 
