@@ -1,8 +1,8 @@
+use crate::FixedPoint;
 use ndarray::{s, Array, Array1, Array2, Array3, Array4, ArrayBase, Axis, Data, Dimension};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use sails_rs::prelude::*;
-
 // Load weights into Array4
 pub fn load_weights_4d<const O: usize, const I: usize, const H: usize, const W: usize>(
     weights: [[[[Decimal; W]; H]; I]; O],
@@ -102,9 +102,10 @@ pub fn exp_approx(x: Decimal, tolerance: Decimal) -> Decimal {
     if x < Decimal::new(-15, 0) {
         return Decimal::ZERO;
     }
-    
+
     let mut term = Decimal::ONE;
     let mut sum = Decimal::ONE;
+
     let mut n = 1;
     while term.abs() >= tolerance {
         term *= x / Decimal::from(n);
@@ -157,4 +158,54 @@ pub fn flatten_4d_to_1d(input: &Vec<Vec<Vec<Vec<Decimal>>>>) -> Vec<Decimal> {
         .flat_map(|z| z.iter())
         .cloned()
         .collect()
+}
+
+pub fn fixed_points_to_array4(
+    fixed_points: Vec<FixedPoint>,
+    dimensions: (usize, usize, usize, usize),
+) -> Array4<Decimal> {
+    let (dim1, dim2, dim3, dim4) = dimensions;
+
+    assert_eq!(
+        fixed_points.len(),
+        dim1 * dim2 * dim3 * dim4,
+        "Input Vec<FixedPoint> does not match target dimensions"
+    );
+
+    let mut result = Array4::<Decimal>::zeros((dim1, dim2, dim3, dim4));
+
+    for (index, fixed_point) in fixed_points.into_iter().enumerate() {
+        let d1 = index / (dim2 * dim3 * dim4);
+        let d2 = (index / (dim3 * dim4)) % dim2;
+        let d3 = (index / dim4) % dim3;
+        let d4 = index % dim4;
+
+        result[[d1, d2, d3, d4]] = Decimal::new(fixed_point.num as i64, fixed_point.scale);
+    }
+
+    result
+}
+
+pub fn fixed_points_to_array2(
+    fixed_points: Vec<FixedPoint>,
+    dimensions: (usize, usize),
+) -> Array2<Decimal> {
+    let (rows, cols) = dimensions;
+
+    assert_eq!(
+        fixed_points.len(),
+        rows * cols,
+        "Input Vec<FixedPoint> does not match target dimensions"
+    );
+
+    let mut result = Array2::<Decimal>::zeros((rows, cols));
+
+    for (index, fixed_point) in fixed_points.into_iter().enumerate() {
+        let row = index / cols;
+        let col = index % cols;
+
+        result[[row, col]] = Decimal::new(fixed_point.num as i64, fixed_point.scale);
+    }
+
+    result
 }

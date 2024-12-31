@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(static_mut_refs)]
 
 use rust_decimal::Decimal;
 use sails_rs::{
@@ -18,7 +19,7 @@ impl ManagerState {
     pub fn new() -> Self {
         Self {
             checkers: Vec::new(),
-            point_results: HashMap::with_capacity(400_000),
+            point_results: HashMap::with_capacity(360_000),
             points_sent: 0,
         }
     }

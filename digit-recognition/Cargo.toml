@@ -24,7 +24,10 @@ tokio = { version = "1.41", features = ["rt", "macros"] }
 eframe = "0.29.1"
 image = "0.25.5"
 rust_decimal = { version = "1.36.0", default-features = false, features = ["maths"] }
+rust_decimal_macros = { version = "1.36.0" }
 imageproc = "0.25.0"
+ndarray = { version = "0.16.1", default-features = false }
+hex = "0.4.3"
 
 [features]
 wasm-binary = []
