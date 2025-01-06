@@ -35,19 +35,11 @@ The Checker contract evaluates whether points belong to the Mandelbrot set. Its 
 2. **Result Reporting**:
 - Returns the computation results (e.g., iteration counts) to the Manager contract.
 3. **Computation Details**:
-- Implements the Mandelbrot formula:
-$
-z_{n+1} = z_n^2 + c
-$
-where $z$ is a complex number, and $c$ is the input point.
-- Checks if 
-$
-|z|^2 > 4
-$
-to determine escape from the set.
+- Evaluates each point based on its coordinates in the complex plane and determines whether the point "escapes" or remains bounded.
 
 ### Workflow
 1. The Manager generates a grid of complex points within user-defined bounds and parameters.
 2. Points are distributed to Checker contracts for parallel evaluation.
 3. Each Checker processes its batch of points and reports results back to the Manager.
 4. The Manager collects and stores the results, marking points as either inside or outside the Mandelbrot set.
+
