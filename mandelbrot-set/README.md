@@ -1,5 +1,3 @@
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
-
 ## Parallel Mandelbrot Set Calculation Using Smart Contracts
 
 The Mandelbrot set represents a classic example of computational complexity. Calculating this set often involves handling millions of data points and requires significant computational power. This example demonstrates how these computations can be performed using smart contracts on **gear.exe**.
