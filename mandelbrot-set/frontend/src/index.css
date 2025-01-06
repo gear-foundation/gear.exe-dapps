@@ -1,0 +1,40 @@
+:root {
+  font-family: "Roboto Mono", monospace;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff80 transparent;
+  scroll-snap-type: proximity;
+}
+
+a {
+  font-weight: 500;
+  font-size: 12px;
+  color: #a8f593;
+}
+
+a:hover {
+  color: #a8f593;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.modal-open {
+  overflow-y: hidden;
+}
+
+w3m-modal {
+  background-color: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+}
