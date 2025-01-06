@@ -1,3 +1,5 @@
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
+
 ## Parallel Mandelbrot Set Calculation Using Smart Contracts
 
 The Mandelbrot set represents a classic example of computational complexity. Calculating this set often involves handling millions of data points and requires significant computational power. This example demonstrates how these computations can be performed using smart contracts on **gear.exe**.
@@ -34,9 +36,9 @@ The Checker contract evaluates whether points belong to the Mandelbrot set. Its 
 - Returns the computation results (e.g., iteration counts) to the Manager contract.
 3. **Computation Details**:
 - Implements the Mandelbrot formula:
-$$
-z_{n+1} = z_n^2 + c, \quad z_0 = 0
-$$
+$
+z_{n+1} = z_n^2 + c
+$
 where $z$ is a complex number, and $c$ is the input point.
 - Checks if 
 $
