@@ -1,0 +1,34 @@
+type FixedPoint = struct {
+  num: i64,
+  scale: u32,
+};
+
+type Point = struct {
+  c_re: str,
+  c_im: str,
+};
+
+type Result = struct {
+  c_re: str,
+  c_im: str,
+  iter: u32,
+};
+
+constructor {
+  New : ();
+};
+
+service Manager {
+  AddCheckers : (checkers: vec actor_id) -> null;
+  CheckPointsSet : (max_iter: u32, batch_size: u32) -> null;
+  GenerateAndStorePoints : (width: u32, height: u32, x_min: FixedPoint, x_max: FixedPoint, y_min: FixedPoint, y_max: FixedPoint, points_per_call: u32) -> null;
+  Restart : () -> null;
+  ResultCalculated : (points: vec Point, results: vec u32) -> null;
+  SendNextBatch : (checker: actor_id, max_iter: u32, batch_size: u32) -> null;
+  query GetCheckers : () -> vec actor_id;
+  query GetPoints : () -> vec Point;
+  query GetPointsLen : () -> u32;
+  query GetResults : (start_index: u32, end_index: u32) -> vec Result;
+  query PointsSent : () -> u32;
+};
+
