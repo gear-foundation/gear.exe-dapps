@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    --primary: 107 83% 77%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 215 20.2% 65.1%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 50%;
+
+    --accent: 107 23% 8%;
+    --accent-foreground: 107 83% 77%;
+
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 50%;
+
+    --border: 0 0% 100%;
+    --input: 0 0% 16%;
+
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+
+    --primary: 107 83% 77%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 220 4% 19%;
+    --secondary-foreground: 0 0% 90%;
+
+    --destructive: 359 92% 60%;
+    --destructive-foreground: 0 100% 97%;
+
+    --ring: 0 0% 16%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground/75 [--container-padding:1.5rem] md:[--container-padding:3rem];
+    font-optical-sizing: auto;
+    /*font-feature-settings: "rlig" 1, "calt" 1;*/
+  }
+
+  /* container desktop width: 1344px + 48px + 48px */
+  .container {
+    @apply w-full max-w-[1440px] px-[--container-padding] mx-auto;
+  }
+
+  p,
+  ul,
+  ol {
+    @apply normal-case;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply uppercase;
+  }
+
+  h1 {
+    font-size: 32px;
+    line-height: 38.4px;
+    font-weight: 400;
+    color: #fff;
+  }
+}
+
+@layer components {
+  .bg-striped-container {
+    background: repeating-linear-gradient(
+      to right,
+      hsla(var(--foreground) / 0.16),
+      hsla(var(--foreground) / 0.16) 1px,
+      hsl(var(--background)) 1px,
+      hsl(var(--background)) 4px
+    );
+  }
+
+  .bg-dotted-container {
+    background-image: radial-gradient(
+      circle at 2px 2px,
+      hsla(var(--foreground) / 0.16) 2px,
+      transparent 0
+    );
+    background-size: 20px 20px;
+  }
+
+  .link {
+    @apply transition-colors hover:text-foreground focus-visible:text-foreground active:text-foreground/50;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply relative inline-flex items-center justify-center rounded-xl text-xs uppercase font-bold select-none transition cursor-pointer;
+  }
+
+  /* Variants */
+  .btn--variant-default {
+    @apply bg-foreground text-background
+    pt-[13px] pb-[15px] px-[23px]
+    interactive-focus
+    [&:not(aria-disabled="true")]:active:bg-foreground/50 enabled:active:bg-foreground/50
+    disabled:bg-foreground/30 aria-disabled:bg-foreground/30
+    disabled:cursor-auto aria-disabled:cursor-auto;
+  }
+
+  .btn--variant-outline {
+    @apply bg-background text-foreground border border-foreground/15
+    pt-[13px] pb-[15px] px-[23px]
+    [&:not(aria-disabled="true")]:active:text-foreground/50 enabled:active:text-foreground/50
+    disabled:text-foreground/30 aria-disabled:text-foreground/30
+    disabled:cursor-auto aria-disabled:cursor-auto;
+  }
+
+  .btn--variant-link {
+    @apply link border-0 rounded-none p-0 justify-start
+    disabled:cursor-auto aria-disabled:cursor-auto;
+  }
+
+  .btn--variant-icon {
+    @apply bg-background text-foreground border border-foreground/15 p-[15px]
+    enabled:hover:text-primary enabled:focus-visible:text-primary enabled:active:text-foreground/50
+    [&:not(aria-disabled="true")]:hover:text-primary [&:not(aria-disabled="true")]:focus-visible:text-primary [&:not(aria-disabled="true")]:active:text-foreground/50
+    disabled:text-foreground/30 aria-disabled:text-foreground/30
+    disabled:cursor-auto aria-disabled:cursor-auto;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  /* Show scrollbar */
+  .scrollbar::-webkit-scrollbar {
+    display: block;
+  }
+
+  .scrollbar {
+    -ms-overflow-style: auto; /* IE and Edge */
+    scrollbar-width: thin; /* Firefox */
+  }
+
+  .interactive-focus {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background;
+  }
+
+  .h-screen-header {
+    min-height: calc(100vh - 78px);
+  }
+}
