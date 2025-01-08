@@ -83,7 +83,12 @@ async fn async_main() {
         scale: value.scale(),
     });
 
-    let payload = ["DigitRecognition".encode(), "SetConv1Weights".encode(), (conv1_weight.clone(), conv1_bias.clone().to_vec()).encode()].concat();
+    let payload = [
+        "DigitRecognition".encode(),
+        "SetConv1Weights".encode(),
+        (conv1_weight.clone(), conv1_bias.clone().to_vec()).encode(),
+    ]
+    .concat();
     println!("CONV1 PAYLOAD {:?}", hex::encode(payload));
     service_client
         .set_conv_1_weights(conv1_weight, conv1_bias.to_vec())
@@ -126,18 +131,10 @@ async fn async_main() {
         .unwrap();
 
     service_client
-        .predict(pixels.to_vec(), false)
+        .predict(pixels.to_vec())
         .send_recv(program_id)
         .await
         .unwrap();
-
-    service_client
-        .conv_2(false)
-        .send_recv(program_id)
-        .await
-        .unwrap();
-
-    service_client.finish().send_recv(program_id).await.unwrap();
 
     let result = service_client.result().recv(program_id).await.unwrap();
 

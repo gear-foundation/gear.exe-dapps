@@ -16,9 +16,9 @@ static mut STATE: Option<State> = None;
 
 #[derive(Default)]
 pub struct State {
-    conv1_weights: Array4<Decimal>,
+    conv1_weights: Array2<Decimal>,
     conv1_bias: Array1<Decimal>,
-    conv2_weights: Array4<Decimal>,
+    conv2_weights: Array2<Decimal>,
     conv2_bias: Array1<Decimal>,
     fc1_weights: Array2<Decimal>,
     fc1_bias: Array1<Decimal>,
@@ -64,13 +64,17 @@ impl DigitRecognitionService {
 
     pub fn set_conv1_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
         let state = self.get_mut();
-        state.conv1_weights = fixed_points_to_array4(weights, (8, 1, 5, 5));
+
+        state.conv1_weights =
+            filter_to_matrix_from_flat(&fixed_points_to_decimal_vector(&weights), 8, 1, 5, 5);
         state.conv1_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
     }
 
     pub fn set_conv2_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
         let state = self.get_mut();
-        state.conv2_weights = fixed_points_to_array4(weights, (8, 8, 5, 5));
+        state.conv2_weights =
+            filter_to_matrix_from_flat(&fixed_points_to_decimal_vector(&weights), 8, 8, 5, 5);
+
         state.conv2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
     }
 
@@ -86,12 +90,8 @@ impl DigitRecognitionService {
         state.fc2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
     }
 
-    pub fn predict(&mut self, pixels: Vec<u16>, continue_calc: bool) {
-        self.conv1(pixels, continue_calc);
-    }
-
     /// Converts raw pixels into a 3D tensor
-    fn prepare_input(pixels: &Vec<u16>) -> Array3<Decimal> {
+    fn prepare_input(pixels: &Vec<u16>) -> Array2<Decimal> {
         assert!(
             pixels.len() == 784,
             "Input size mismatch: expected 784, got {}",
@@ -103,6 +103,8 @@ impl DigitRecognitionService {
             GREYSCALE_SIZE
         );
 
+        let gr_size = Decimal::new(GREYSCALE_SIZE as i64, 0);
+
         let mut input = Array3::<Decimal>::zeros((1, 28, 28));
         let gr_size = Decimal::new(GREYSCALE_SIZE as i64, 0);
 
@@ -112,62 +114,43 @@ impl DigitRecognitionService {
             input[[0, y, x]] = Decimal::new(pixel as i64, 0) / gr_size;
         }
 
-        input
+        im2col(&input, 5)
     }
 
     /// Applies the first convolutional layer
-    fn conv1(&mut self, pixels: Vec<u16>, continue_calc: bool) {
+    pub fn predict(&mut self, pixels: Vec<u16>) {
         let input = Self::prepare_input(&pixels);
-
         let state = self.get_mut();
 
-        state.x = relu(&conv2d(
+        sails_rs::gstd::debug!(" gas before {:?}", exec::gas_available());
+
+        // Step 1: First convolutional layer
+        state.x = apply_conv_layer(
             &input,
             &state.conv1_weights,
-            &state.conv1_bias.to_vec(),
-        ));
-        state.x = max_pool2d_single(&state.x, 2);
+            &state.conv1_bias,
+            24,
+            2, // Apply max-pooling with stride 2
+        );
 
-        if continue_calc {
-            let payload_bytes = [
-                "DigitRecognition".encode(),
-                "Conv2".encode(),
-                continue_calc.encode(),
-            ]
-            .concat();
-            msg::send_bytes(exec::program_id(), payload_bytes, 0)
-                .expect("Error during msg sending");
-        }
-    }
-
-    /// Applies the second convolutional layer
-    pub fn conv2(&mut self, continue_calc: bool) {
-        let state = self.get_mut();
-        state.x = relu(&conv2d(
-            &state.x,
+        // Step 2: Second convolutional layer
+        let input_col = im2col(&state.x, 5);
+        state.x = apply_conv_layer(
+            &input_col,
             &state.conv2_weights,
-            &state.conv2_bias.to_vec(),
-        ));
-        state.x = max_pool2d_single(&state.x, 2);
-        if continue_calc {
-            let payload_bytes = ["DigitRecognition".encode(), "Finish".encode()].concat();
-            msg::send_bytes(exec::program_id(), payload_bytes, 0)
-                .expect("Error during msg sending");
-        }
-    }
+            &state.conv2_bias,
+            8,
+            2, // Apply max-pooling with stride 2
+        );
 
-    /// Applies fully connected layers and produces probabilities
-    pub fn finish(&mut self) {
-        let state = self.get_mut();
+        // Step 3: Flatten the result
         let x = flatten_single(&state.x);
 
-        // First fully connected layer
-        let mut x = relu_1d(&linear_single(&x, &state.fc1_weights, &state.fc1_bias));
+        // Step 4: Fully connected layers
+        let x = relu_1d(&linear_single(&x, &state.fc1_weights, &state.fc1_bias));
+        let x = linear_single(&x, &state.fc2_weights, &state.fc2_bias);
 
-        // Second fully connected layer
-        x = linear_single(&x, &state.fc2_weights, &state.fc2_bias);
-
-        // Compute softmax probabilities
+        // Step 5: Compute softmax probabilities
         let probabilities = softmax(&x.to_vec());
         state.result = Some(
             probabilities
@@ -175,6 +158,7 @@ impl DigitRecognitionService {
                 .map(|dec| FixedPoint::from_decimal(&dec))
                 .collect(),
         );
+
     }
 
     pub fn result(&self) -> Vec<FixedPoint> {
