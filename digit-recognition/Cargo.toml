@@ -1,0 +1,38 @@
+[workspace]
+
+members = ["client"]
+
+
+[package]
+name = "digit-recognition"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+digit-recognition-app = { path = "app" }
+
+[build-dependencies]
+digit-recognition-app = { path = "app" }
+sails-rs = { version = "0.6.3", features = ["wasm-builder"] }
+sails-idl-gen = "0.6.3"
+
+[dev-dependencies]
+digit-recognition = { path = ".", features = ["wasm-binary"] }
+digit-recognition-client = { path = "client" }
+sails-rs = { version = "0.6.3", features = ["gtest"] }
+tokio = { version = "1.41", features = ["rt", "macros"] }
+eframe = "0.29.1"
+image = "0.25.5"
+rust_decimal = { version = "1.36.0", default-features = false, features = ["maths"] }
+rust_decimal_macros = { version = "1.36.0" }
+imageproc = "0.25.0"
+ndarray = { version = "0.16.1", default-features = false }
+hex = "0.4.3"
+
+[features]
+wasm-binary = []
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+harness = false
