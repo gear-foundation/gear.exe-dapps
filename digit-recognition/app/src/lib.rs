@@ -1,24 +1,28 @@
 #![no_std]
 #![allow(static_mut_refs)]
 
-use ndarray::{Array1, Array3, Array4};
-use rust_decimal::prelude::Zero;
+use ndarray::{Array1, Array2, Array3};
 use rust_decimal::Decimal;
-
-use sails_rs::gstd::{exec, msg};
 use sails_rs::prelude::*;
 struct DigitRecognitionService(());
 pub mod tensor_funcs;
-pub mod weights_and_biases;
-use crate::weights_and_biases::*;
 use tensor_funcs::*;
+
 const GREYSCALE_SIZE: u32 = 255;
 
 static mut STATE: Option<State> = None;
 
 #[derive(Default)]
 pub struct State {
-    x: Array3<Decimal>,
+    conv1_weights: Array2<Decimal>,
+    conv1_bias: Array1<Decimal>,
+    conv2_weights: Array2<Decimal>,
+    conv2_bias: Array1<Decimal>,
+    fc1_weights: Array2<Decimal>,
+    fc1_bias: Array1<Decimal>,
+    fc2_weights: Array2<Decimal>,
+    fc2_bias: Array1<Decimal>,
+
     result: Option<Vec<FixedPoint>>,
 }
 #[derive(Encode, Decode, TypeInfo, Clone)]
@@ -55,12 +59,36 @@ impl DigitRecognitionService {
         Self(())
     }
 
-    pub fn predict(&mut self, pixels: Vec<u16>, continue_calc: bool) {
-        self.conv1(pixels, continue_calc);
+    pub fn set_conv1_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
+        let state = self.get_mut();
+
+        state.conv1_weights =
+            filter_to_matrix_from_flat(&fixed_points_to_decimal_vector(&weights), 8, 1, 5, 5);
+        state.conv1_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+    }
+
+    pub fn set_conv2_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
+        let state = self.get_mut();
+        state.conv2_weights =
+            filter_to_matrix_from_flat(&fixed_points_to_decimal_vector(&weights), 8, 8, 5, 5);
+
+        state.conv2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+    }
+
+    pub fn set_fc1_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
+        let state = self.get_mut();
+        state.fc1_weights = fixed_points_to_array2(weights, (64, 128));
+        state.fc1_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+    }
+
+    pub fn set_fc2_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
+        let state = self.get_mut();
+        state.fc2_weights = fixed_points_to_array2(weights, (10, 64));
+        state.fc2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
     }
 
     /// Converts raw pixels into a 3D tensor
-    fn prepare_input(pixels: &Vec<u16>) -> Array3<Decimal> {
+    fn prepare_input(pixels: &Vec<u16>) -> Array2<Decimal> {
         assert!(
             pixels.len() == 784,
             "Input size mismatch: expected 784, got {}",
@@ -81,63 +109,41 @@ impl DigitRecognitionService {
             input[[0, y, x]] = Decimal::new(pixel as i64, 0) / gr_size;
         }
 
-        input
+        im2col(&input, 5)
     }
 
     /// Applies the first convolutional layer
-    fn conv1(&mut self, pixels: Vec<u16>, continue_calc: bool) {
+    pub fn predict(&mut self, pixels: Vec<u16>) {
         let input = Self::prepare_input(&pixels);
-        let weights = load_weights_4d(CONV1_WEIGHT);
-
         let state = self.get_mut();
 
-        state.x = relu(&conv2d(&input, &weights, &CONV1_BIAS.to_vec()));
-        state.x = max_pool2d_single(&state.x, 2);
+        // Step 1: First convolutional layer
+        let mut x = apply_conv_layer(
+            &input,
+            &state.conv1_weights,
+            &state.conv1_bias,
+            24,
+            2, // Apply max-pooling with stride 2
+        );
 
-        if continue_calc {
-            let payload_bytes = [
-                "DigitRecognition".encode(),
-                "Conv2".encode(),
-                continue_calc.encode(),
-            ]
-            .concat();
-            msg::send_bytes(exec::program_id(), payload_bytes, 0)
-                .expect("Error during msg sending");
-        }
-    }
+        // Step 2: Second convolutional layer
+        let input_col = im2col(&x, 5);
+        x = apply_conv_layer(
+            &input_col,
+            &state.conv2_weights,
+            &state.conv2_bias,
+            8,
+            2, // Apply max-pooling with stride 2
+        );
 
-    /// Applies the second convolutional layer
-    pub fn conv2(&mut self, continue_calc: bool) {
-        let weights = load_weights_4d(CONV2_WEIGHT);
+        // Step 3: Flatten the result
+        let x = flatten_single(&x);
 
-        let state = self.get_mut();
-        state.x = relu(&conv2d(&state.x, &weights, &CONV2_BIAS.to_vec()));
-        state.x = max_pool2d_single(&state.x, 2);
-        if continue_calc {
-            let payload_bytes = ["DigitRecognition".encode(), "Finish".encode()].concat();
-            msg::send_bytes(exec::program_id(), payload_bytes, 0)
-                .expect("Error during msg sending");
-        }
-    }
+        // Step 4: Fully connected layers
+        let x = relu_1d(&linear_single(&x, &state.fc1_weights, &state.fc1_bias));
+        let x = linear_single(&x, &state.fc2_weights, &state.fc2_bias);
 
-    /// Applies fully connected layers and produces probabilities
-    pub fn finish(&mut self) {
-        let state = self.get_mut();
-        let x = flatten_single(&state.x);
-
-        // First fully connected layer
-        let fc1_weights = load_weights_2d(FC1_WEIGHT);
-        let mut x = relu_1d(&linear_single(
-            &x,
-            &fc1_weights,
-            &Array1::from(FC1_BIAS.to_vec()),
-        ));
-
-        // Second fully connected layer
-        let fc2_weights = load_weights_2d(FC2_WEIGHT);
-        x = linear_single(&x, &fc2_weights, &&Array1::from(FC2_BIAS.to_vec()));
-
-        // Compute softmax probabilities
+        // Step 5: Compute softmax probabilities
         let probabilities = softmax(&x.to_vec());
         state.result = Some(
             probabilities
@@ -145,21 +151,12 @@ impl DigitRecognitionService {
                 .map(|dec| FixedPoint::from_decimal(&dec))
                 .collect(),
         );
+
     }
 
     pub fn result(&self) -> Vec<FixedPoint> {
         self.get().result.clone().unwrap_or_default()
     }
-}
-
-fn relu(input: &Array3<Decimal>) -> Array3<Decimal> {
-    input.mapv(|x| {
-        if x > Decimal::zero() {
-            x
-        } else {
-            Decimal::zero()
-        }
-    })
 }
 
 pub struct DigitRecognitionProgram(());
@@ -174,20 +171,4 @@ impl DigitRecognitionProgram {
     pub fn digit_recognition(&self) -> DigitRecognitionService {
         DigitRecognitionService::new()
     }
-}
-
-fn load_weights_4d<const O: usize, const I: usize, const H: usize, const W: usize>(
-    weights: [[[[Decimal; W]; H]; I]; O],
-) -> Array4<Decimal> {
-    Array4::from_shape_vec(
-        (O, I, H, W),
-        weights
-            .iter()
-            .flat_map(|out| out.iter())
-            .flat_map(|inp| inp.iter())
-            .flat_map(|row| row.iter())
-            .cloned()
-            .collect(),
-    )
-    .expect("Failed to convert 4D weights")
 }
