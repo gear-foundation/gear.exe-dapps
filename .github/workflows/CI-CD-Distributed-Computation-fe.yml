@@ -39,7 +39,7 @@ jobs:
       - name: Build and push Frontend Docker image
         uses: docker/build-push-action@master
         with:
-          context: frontend
+          context: mandelbrot-set/frontend
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-fe:prod
           build-args: |
