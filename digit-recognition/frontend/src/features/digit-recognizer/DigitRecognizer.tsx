@@ -8,7 +8,7 @@ import styles from "./DigitRecognizer.module.scss";
 export const DigitRecognizer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCanvasTouched, setIsCanvasTouched] = useState(false);
-  const { digitRecognitionPredict, reset, data, isPending } =
+  const { reset, data, isPending } =
     useDigitRecognitionPredict();
 
   const clearCanvas = () => {
