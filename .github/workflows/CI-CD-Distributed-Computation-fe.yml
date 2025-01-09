@@ -41,7 +41,7 @@ jobs:
         with:
           context: mandelbrot-set/frontend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-fe:prod
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-mandelbrot-set-fe:prod
           build-args: |
             VITE_WALLET_CONNECT_PROJECT_ID=${{ secrets.VITE_WALLET_CONNECT_PROJECT_ID_MONDELBROT }}
             VITE_GEAR_API_NODE=${{ secrets.VITE_GEAR_API_NODE }}
