@@ -10,6 +10,7 @@ use sails_rs::{
 struct CnnCatsDogsService(());
 
 pub mod model;
+pub mod model_constants;
 use model::*;
 use rust_decimal::prelude::ToPrimitive;
 
@@ -66,7 +67,7 @@ impl CnnCatsDogsService {
     fn init() -> Self {
         unsafe {
             STATE = Some(State {
-                model: Model::init(),
+             //   model: Model::init(),
                 ..Default::default()
             })
         }
@@ -86,12 +87,7 @@ impl CnnCatsDogsService {
         Self(())
     }
 
-    pub fn set_layer_filters(
-        &mut self,
-        layer: u8,
-        filters: Vec<Vec<i64>>,
-        row_start: u16,
-    ) {
+    pub fn set_layer_filters(&mut self, layer: u8, filters: Vec<Vec<i64>>, row_start: u16) {
         self.get_mut()
             .model
             .set_layer_filters(layer, filters, row_start as usize);
@@ -517,3 +513,4 @@ impl CnnCatsDogsProgram {
         CnnCatsDogsService::new()
     }
 }
+

@@ -357,8 +357,6 @@ async fn upload_layer(
         println!("LAYER {}, {:?}", layer_number, bytes.len());
         writeln!(file, "\"0x{}\",", bytes).unwrap();
 
-           
-
         service_client
             .set_layer_filters(layer_number, part, row_start as u16)
             .send_recv(program_id)
