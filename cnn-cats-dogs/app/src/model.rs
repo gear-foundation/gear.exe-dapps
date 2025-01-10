@@ -154,7 +154,7 @@ impl Layer {
             filters
                 .into_iter()
                 .flatten()
-                .map(|x| x as i128) // преобразуем i32 в i128
+                .map(|x| x as i128) 
                 .collect(),
         )
         .expect("Invalid filter dimensions");

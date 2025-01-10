@@ -67,7 +67,7 @@ impl CnnCatsDogsService {
     fn init() -> Self {
         unsafe {
             STATE = Some(State {
-             //   model: Model::init(),
+                model: Model::init(),
                 ..Default::default()
             })
         }
