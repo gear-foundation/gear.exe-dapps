@@ -10,23 +10,33 @@ This project implements a **Convolutional Neural Network (CNN)** for digit recog
 2. **Normalization**:
 - Converts pixel values into a 3D tensor.
 - Normalizes values to a range of [0, 1].
+- Converts intermediate results to a column format using `im2col` optimization.
 3. **Computation**:
-- Performs computations through convolutional layers, `ReLU` activation, max pooling, and fully connected layers.
+- Performs computations through convolutional layers, `ReLU` activation, max pooling, and fully connected layers, optimized with the `im2col` algorithm.
 4. **Output**:
 - Produces probabilities for each digit (0-9) using softmax.
 
-## Smart Contract Modularity
+## Smart Contract Implementation
 The smart contract splits the digit recognition process into modular phases for efficient execution and resource management:
 
-1. **Phase 1: Conv1**:
-- Processes the input image with the first convolutional layer.
-- Applies `ReLU` activation and max pooling.
-2. **Phase 2: Conv2**:
-- Passes the intermediate results through the second convolutional layer.
-- `ReLU` activation and max pooling are applied.
-2. **Phase 3: Finish**:
-- Executes fully connected layers and computes probabilities using softmax.
-- Outputs results in a fixed-point format for precision and consistency.
+1. **Step 1: Input Preparation**:
+- The input image is normalized and prepared as a 3D tensor.
+- Converts intermediate results to a column format using `im2col` optimization.
+
+2. **Step 2: First Convolutional Layer**:
+- Applies the first convolution using pre-trained weights and biases.
+- Uses `ReLU` activation and max pooling with a stride of 2.
+
+3. **Step 3: Second Convolutional Layer**:
+- Applies the second convolution, `ReLU` activation, and max pooling with a stride of 2.
+
+4. **Step 4: Fully Connected Layers**:
+- Flattens the output.
+- Passes the flattened data through two fully connected layers.
+
+5. **Step 5: Softmax Computation**:
+- Computes probabilities for each digit.
+- Outputs the result in a fixed-point format for precision.
 
 ### Demonstration
 To see how the model works in action, follow these steps:
