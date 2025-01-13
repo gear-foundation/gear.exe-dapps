@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = Client::new();
 
     let payload = hex::encode(manager_client::manager::io::GetCheckers::encode_call());
-    let program_id = "0x8f2789dB14017AdBC83F16C0A8CaeD4aA1684272";
+    let program_id = "0xe1765C322F91573517a158B204FF21e2364B1a86";
     let params = json!({
         "jsonrpc": "2.0",
         "id": 1,
@@ -59,7 +59,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    let url = "http://localhost:9944";
+    let url = "http://135.181.114.201:9944";
+   //let url = "http://localhost:9944";
 
     let response = client
         .post(url)
@@ -82,7 +83,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let json = to_string_pretty(&json_data)?;
     writeln!(file, "{}", json)?;
 
-    let total_points = 360_000;
+    let total_points = 250_000;
     let batch_size = 50_000;
 
     let mut checked_points: Vec<PointResult> = Vec::new();
