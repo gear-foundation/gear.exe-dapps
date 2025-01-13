@@ -79,7 +79,7 @@ async fn model_predict() {
     let remoting = GTestRemoting::new(system, ACTOR_ID.into());
     remoting.system().init_logger();
 
-    let image_path = "10014.jpg";
+    let image_path = "images/10014.jpg";
     let pixels = flatten_3d_to_1d(array3_to_fixed_point(load_and_preprocess_image(image_path)));
 
     save_pixels_to_json("pixels.json", &pixels);

@@ -17,16 +17,25 @@ static mut STATE: Option<State> = None;
 
 #[derive(Default)]
 pub struct State {
+    // The model used for CNN predictions
     model: Model,
+    // Configuration for batch sizes and layer-specific parameters
     config: Config,
+    // The current layer being processed
     current_layer_id: u8,
+    // Input data transformed into a 3D array
     x: Array3<i128>,
+    // Intermediate result during computation
     result: Array2<i128>,
+    // Flattened result from dense layers
     result_1_d: Array1<i128>,
+    // 2D representation of the image data for convolution
     im2col_matrix: Array2<i128>,
+    // Final probability and whether it was calculated
     probability: (Decimal, bool),
 }
 
+// Configuration struct for batch sizes for each layer in the model
 #[derive(Default)]
 pub struct Config {
     conv_1_batch_size: u16,
@@ -134,10 +143,14 @@ impl CnnCatsDogsService {
         self.get_mut().model.set_dense_2_const(filters, bias);
     }
 
+    // Starts the prediction process by processing the pixels into an array.
+    // If `continue_execution` is set to true, it triggers the next steps by sending a message.
     pub fn predict(&mut self, pixels: Vec<u8>, continue_execution: bool) {
         let state = self.get_mut();
         state.x = process_pixels_to_array3(pixels);
+        // Reset probability for new prediction
         state.probability = (Decimal::new(0, 0), false);
+        // Start from the first layer
         state.current_layer_id = 1;
 
         if continue_execution {
@@ -151,6 +164,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    // Allocate memory for the im2col matrix, which is used for convolutional operations.
     pub fn allocate_im2col(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         let (h, w, c) = state.x.dim();
@@ -178,6 +192,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    // Perform the im2col operation, which flattens the image into a 2D matrix for convolution.
     pub fn im2col(&mut self, continue_execution: bool) {
         let state = self.get_mut();
 
@@ -202,6 +217,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    // Perform convolution on the image data using the im2col matrix.
     pub fn conv(&mut self, start_col: u16, batch_size: u16, continue_execution: bool) {
         let state = self.get_mut();
         let layer = state.current_layer_id;
@@ -243,6 +259,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    // Add biases and apply the ReLU activation function on the result.
     pub fn add_bias_and_relu(
         &mut self,
         start_filter_idx: u16,
@@ -287,6 +304,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    // Apply batch normalization on the result.
     pub fn norm(&mut self, start_channel_id: u16, batch_size: u16, continue_execution: bool) {
         let state = self.get_mut();
         let layer = state.current_layer_id;
@@ -317,6 +335,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    // Convert 2D result matrix into a 3D array for further processing.
     pub fn convert_2d_to_3d(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         let layer = state.current_layer_id;
@@ -333,6 +352,8 @@ impl CnnCatsDogsService {
             msg::send_bytes(exec::program_id(), bytes, 0).expect("Error during msg sending");
         }
     }
+
+    // Perform 2D max pooling operation on the image data.
     pub fn max_pool_2d(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         state.current_layer_id += 1;
@@ -359,6 +380,7 @@ impl CnnCatsDogsService {
         }
     }
 
+     // Flatten the image data for the fully connected layers.
     pub fn flatten(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         state.result = Model::flatten_apply(&state.x);
@@ -368,6 +390,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    // Apply the dense layer calculations and finish the prediction.
     pub fn dense_apply(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         let layer = state.current_layer_id;
@@ -390,36 +413,6 @@ impl CnnCatsDogsService {
         };
     }
 
-    // pub fn get_result(&self, start_row: u16, num_rows: u16) -> Vec<Vec<i128>> {
-    //     let state = self.get();
-    //     let end_row = (start_row + num_rows).min(state.result.nrows() as u16) as usize;
-    //     state
-    //         .result
-    //         .slice(ndarray::s![start_row as usize..end_row, ..])
-    //         .axis_iter(ndarray::Axis(0))
-    //         .map(|row| row.to_vec())
-    //         .collect()
-    // }
-
-    // pub fn get_input(&self) -> Vec<Vec<Vec<i128>>> {
-    //     let state = self.get();
-    //     state
-    //         .x
-    //         .axis_iter(ndarray::Axis(0))
-    //         .map(|matrix| {
-    //             matrix
-    //                 .outer_iter()
-    //                 .map(|row| row.to_vec())
-    //                 .collect::<Vec<Vec<i128>>>()
-    //         })
-    //         .collect::<Vec<Vec<Vec<i128>>>>()
-    // }
-
-    pub fn get_result_1_d(&self) -> Vec<i128> {
-        let state = self.get();
-        state.result_1_d.to_vec()
-    }
-
     pub fn get_probability(&self) -> CalcResult {
         let state = self.get();
         CalcResult {
@@ -429,6 +422,7 @@ impl CnnCatsDogsService {
     }
 }
 
+// Process the input pixel data into a 3D array (height, width, channels).
 fn process_pixels_to_array3(pixels: Vec<u8>) -> Array3<i128> {
     let depth = 128;
     let height = 128;
@@ -439,7 +433,6 @@ fn process_pixels_to_array3(pixels: Vec<u8>) -> Array3<i128> {
 
     array.mapv(|value| {
         (Decimal::from(value) / Decimal::from(255u8))
-            // .round_dp(16)
             .checked_mul(Decimal::from(SCALE))
             .expect("Error in decimal multiplication")
             .round()

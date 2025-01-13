@@ -13,13 +13,13 @@ cnn-cats-dogs-app = { path = "app" }
 
 [build-dependencies]
 cnn-cats-dogs-app = { path = "app" }
-sails-rs = { path = "../../sails/rs", features = ["wasm-builder", "ethexe"] }
-sails-idl-gen = { path = "../../sails/rs/idl-gen" }
+sails-rs = { version = "0.7.1", features = ["wasm-builder", "ethexe"] }
+sails-idl-gen = "0.7.1"
 
 [dev-dependencies]
 cnn-cats-dogs = { path = ".", features = ["wasm-binary"] }
 cnn-cats-dogs-client = { path = "client" }
-sails-rs =  { path = "../../sails/rs", features = ["gtest"] }
+sails-rs =  { version = "0.7.1", features = ["gtest"] }
 tokio = { version = "1.41", features = ["rt", "macros"] }
 image = "0.24.6"
 ndarray = "0.16.1"

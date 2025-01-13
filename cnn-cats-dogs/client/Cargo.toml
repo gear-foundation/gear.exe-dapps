@@ -5,12 +5,12 @@ edition = "2021"
 
 [dependencies]
 mockall = { version = "0.12", optional = true }
-sails-rs =  { path = "../../../sails/rs" }
+sails-rs =  "0.7.1"
 
 [build-dependencies]
 cnn-cats-dogs-app = { path = "../app" }
-sails-client-gen =  { path = "../../../sails/rs/client-gen" }
-sails-idl-gen =  { path = "../../../sails/rs/idl-gen" }
+sails-client-gen =  "0.7.1"
+sails-idl-gen =  "0.7.1"
 
 [features]
 mocks = ["sails-rs/mockall", "dep:mockall"]
