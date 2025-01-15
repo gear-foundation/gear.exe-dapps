@@ -5,12 +5,14 @@ type DigitCanvasProps = {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   isTouched: boolean;
   onTouchedChange: (isTouched: boolean) => void;
+  disabled?: boolean;
 };
 
 export const DigitCanvas = ({
   canvasRef,
   isTouched,
   onTouchedChange,
+  disabled,
 }: DigitCanvasProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -45,14 +47,14 @@ export const DigitCanvas = ({
 
   const startDrawing = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.beginPath();
-        ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-        setIsDrawing(true);
-        onTouchedChange(true);
-      }
+    if (!canvas || disabled) return;
+
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.beginPath();
+      ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+      setIsDrawing(true);
+      onTouchedChange(true);
     }
   };
 

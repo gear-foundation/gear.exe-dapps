@@ -1,15 +1,27 @@
 import { Button, Card } from "@/components";
 import { DigitCanvas } from "./DigitCanvas";
 import { useRef, useState } from "react";
-import { getFlattenedPixelArray } from "./utils";
+import {
+  findMaxIndex,
+  getFlattenedPixelArray,
+  getFloatingPoint,
+} from "./utils";
 import { useDigitRecognitionPredict } from "./api/useDigitRecognitionPredict";
 import styles from "./DigitRecognizer.module.scss";
+import { useReadRpcState } from "./api/readRpcState";
 
 export const DigitRecognizer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCanvasTouched, setIsCanvasTouched] = useState(false);
-  const { reset, data, isPending } =
-    useDigitRecognitionPredict();
+  const [isSubmited, setIsSubmited] = useState(false);
+  const { rpcState, rpcStatePending, refetch } = useReadRpcState();
+
+  const onSuccess = () => refetch().then(() => setIsSubmited(true));
+
+  const { digitRecognitionPredict, reset, isPredictPending } =
+    useDigitRecognitionPredict({ onSuccess });
+
+  const isPending = rpcStatePending || isPredictPending;
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
@@ -24,15 +36,18 @@ export const DigitRecognizer = () => {
 
   const onReset = () => {
     clearCanvas();
+    setIsSubmited(false);
     reset();
   };
 
-  const predictedDigit = data === undefined ? null : Number(data);
+  const predictedDigit =
+    !isSubmited || rpcState === undefined
+      ? null
+      : findMaxIndex(rpcState.map(getFloatingPoint));
 
   const onSubmit = () => {
     const flattenedPixelArray = getFlattenedPixelArray(canvasRef);
-    // digitRecognitionPredict(flattenedPixelArray);
-    console.log("🚀 ~ onSubmit ~ flattenedPixelArray:", flattenedPixelArray);
+    digitRecognitionPredict(flattenedPixelArray);
   };
 
   return (
@@ -48,17 +63,21 @@ export const DigitRecognizer = () => {
           canvasRef={canvasRef}
           isTouched={isCanvasTouched}
           onTouchedChange={setIsCanvasTouched}
+          disabled={isPending || predictedDigit !== null}
         />
       }
       headerSlot={
-        <Button
-          variant="outline"
-          size="xs"
-          className={styles.headerButton}
-          onClick={clearCanvas}
-        >
-          Clear
-        </Button>
+        predictedDigit === null &&
+        !isPending && (
+          <Button
+            variant="outline"
+            size="xs"
+            className={styles.headerButton}
+            onClick={clearCanvas}
+          >
+            Clear
+          </Button>
+        )
       }
       footer={
         <>

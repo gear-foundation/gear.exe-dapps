@@ -1,3 +1,5 @@
+import { FixedPoint } from "./types";
+
 const expectedSize = 28;
 
 export const getFlattenedPixelArray = (
@@ -17,20 +19,11 @@ export const getFlattenedPixelArray = (
 
   tempCtx.drawImage(originalCanvas, 0, 0, expectedSize, expectedSize);
 
-  // Debug function to show the preview of the resized image
-  //   const showPreview = () => {
-  //     const parent = originalCanvas.parentElement;
-  //     canvasRef.current?.remove();
-  //     parent?.append(tempCanvas);
-  //   };
-  //   showPreview();
-
   const imageData = tempCtx.getImageData(0, 0, expectedSize, expectedSize);
 
-  const pixels = imageData.data;
+  const pixels = imageData.data; // Array of RGBA values ​​(4 elements per pixel)
   const grayscaleArray = [];
 
-  // Array of RGBA values ​​(4 elements per pixel)
   for (let i = 0; i < pixels.length; i += 4) {
     const r = pixels[i];
     const g = pixels[i + 1];
@@ -41,4 +34,18 @@ export const getFlattenedPixelArray = (
   }
 
   return grayscaleArray; // Array of 784 elements
+};
+
+export const getFloatingPoint = ({ num, scale }: FixedPoint) => {
+  return Number(Number(num) / Math.pow(10, Number(scale)));
+};
+
+export const findMaxIndex = (numbers: number[]): number | null => {
+  if (numbers.length === 0) {
+    return null;
+  }
+
+  return numbers.reduce((maxIndex, currentValue, currentIndex, array) => {
+    return currentValue > array[maxIndex] ? currentIndex : maxIndex;
+  }, 0);
 };

@@ -1,9 +1,9 @@
 export const digitRecognitionAbi = [
   {
     type: "function",
-    name: "fnDigitRecognitionConv2",
+    name: "fnDigitRecognitionPredict",
     inputs: [
-      { name: "continue_calc", type: "bool", internalType: "bool" },
+      { name: "pixels", type: "uint8[]", internalType: "uint8[]" },
       { name: "_value", type: "uint128", internalType: "uint128" },
     ],
     outputs: [],
@@ -11,17 +11,107 @@ export const digitRecognitionAbi = [
   },
   {
     type: "function",
-    name: "fnDigitRecognitionFinish",
-    inputs: [{ name: "_value", type: "uint128", internalType: "uint128" }],
+    name: "fnDigitRecognitionSetConv1Weights",
+    inputs: [
+      {
+        name: "weights",
+        type: "tuple[]",
+        internalType: "struct IDigitRecognition.FixedPoint[]",
+        components: [
+          { name: "num", type: "int64", internalType: "int64" },
+          { name: "scale", type: "uint32", internalType: "uint32" },
+        ],
+      },
+      {
+        name: "bias",
+        type: "tuple[]",
+        internalType: "struct IDigitRecognition.FixedPoint[]",
+        components: [
+          { name: "num", type: "int64", internalType: "int64" },
+          { name: "scale", type: "uint32", internalType: "uint32" },
+        ],
+      },
+      { name: "_value", type: "uint128", internalType: "uint128" },
+    ],
     outputs: [],
     stateMutability: "payable",
   },
   {
     type: "function",
-    name: "fnDigitRecognitionPredict",
+    name: "fnDigitRecognitionSetConv2Weights",
     inputs: [
-      { name: "pixels", type: "uint16[]", internalType: "uint16[]" },
-      { name: "continue_calc", type: "bool", internalType: "bool" },
+      {
+        name: "weights",
+        type: "tuple[]",
+        internalType: "struct IDigitRecognition.FixedPoint[]",
+        components: [
+          { name: "num", type: "int64", internalType: "int64" },
+          { name: "scale", type: "uint32", internalType: "uint32" },
+        ],
+      },
+      {
+        name: "bias",
+        type: "tuple[]",
+        internalType: "struct IDigitRecognition.FixedPoint[]",
+        components: [
+          { name: "num", type: "int64", internalType: "int64" },
+          { name: "scale", type: "uint32", internalType: "uint32" },
+        ],
+      },
+      { name: "_value", type: "uint128", internalType: "uint128" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "fnDigitRecognitionSetFc1Weights",
+    inputs: [
+      {
+        name: "weights",
+        type: "tuple[]",
+        internalType: "struct IDigitRecognition.FixedPoint[]",
+        components: [
+          { name: "num", type: "int64", internalType: "int64" },
+          { name: "scale", type: "uint32", internalType: "uint32" },
+        ],
+      },
+      {
+        name: "bias",
+        type: "tuple[]",
+        internalType: "struct IDigitRecognition.FixedPoint[]",
+        components: [
+          { name: "num", type: "int64", internalType: "int64" },
+          { name: "scale", type: "uint32", internalType: "uint32" },
+        ],
+      },
+      { name: "_value", type: "uint128", internalType: "uint128" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "fnDigitRecognitionSetFc2Weights",
+    inputs: [
+      {
+        name: "weights",
+        type: "tuple[]",
+        internalType: "struct IDigitRecognition.FixedPoint[]",
+        components: [
+          { name: "num", type: "int64", internalType: "int64" },
+          { name: "scale", type: "uint32", internalType: "uint32" },
+        ],
+      },
+      {
+        name: "bias",
+        type: "tuple[]",
+        internalType: "struct IDigitRecognition.FixedPoint[]",
+        components: [
+          { name: "num", type: "int64", internalType: "int64" },
+          { name: "scale", type: "uint32", internalType: "uint32" },
+        ],
+      },
       { name: "_value", type: "uint128", internalType: "uint128" },
     ],
     outputs: [],
@@ -78,71 +168,135 @@ export const digitRecognitionAbi = [
   },
   {
     type: "event",
-    name: "DigitRecognitionConv2Reply",
-    inputs: [
-      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
-      {
-        name: "_destination",
-        type: "address",
-        indexed: false,
-        internalType: "address",
-      },
-      {
-        name: "_value",
-        type: "uint128",
-        indexed: false,
-        internalType: "uint128",
-      },
-      {
-        name: "_replyTo",
-        type: "bytes32",
-        indexed: false,
-        internalType: "bytes32",
-      },
-      {
-        name: "_replyCode",
-        type: "bytes4",
-        indexed: false,
-        internalType: "bytes4",
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: "event",
-    name: "DigitRecognitionFinishReply",
-    inputs: [
-      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
-      {
-        name: "_destination",
-        type: "address",
-        indexed: false,
-        internalType: "address",
-      },
-      {
-        name: "_value",
-        type: "uint128",
-        indexed: false,
-        internalType: "uint128",
-      },
-      {
-        name: "_replyTo",
-        type: "bytes32",
-        indexed: false,
-        internalType: "bytes32",
-      },
-      {
-        name: "_replyCode",
-        type: "bytes4",
-        indexed: false,
-        internalType: "bytes4",
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: "event",
     name: "DigitRecognitionPredictReply",
+    inputs: [
+      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
+      {
+        name: "_destination",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "_value",
+        type: "uint128",
+        indexed: false,
+        internalType: "uint128",
+      },
+      {
+        name: "_replyTo",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "_replyCode",
+        type: "bytes4",
+        indexed: false,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "DigitRecognitionSetConv1WeightsReply",
+    inputs: [
+      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
+      {
+        name: "_destination",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "_value",
+        type: "uint128",
+        indexed: false,
+        internalType: "uint128",
+      },
+      {
+        name: "_replyTo",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "_replyCode",
+        type: "bytes4",
+        indexed: false,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "DigitRecognitionSetConv2WeightsReply",
+    inputs: [
+      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
+      {
+        name: "_destination",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "_value",
+        type: "uint128",
+        indexed: false,
+        internalType: "uint128",
+      },
+      {
+        name: "_replyTo",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "_replyCode",
+        type: "bytes4",
+        indexed: false,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "DigitRecognitionSetFc1WeightsReply",
+    inputs: [
+      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
+      {
+        name: "_destination",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "_value",
+        type: "uint128",
+        indexed: false,
+        internalType: "uint128",
+      },
+      {
+        name: "_replyTo",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "_replyCode",
+        type: "bytes4",
+        indexed: false,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "DigitRecognitionSetFc2WeightsReply",
     inputs: [
       { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
       {
