@@ -15,6 +15,7 @@ export const DigitRecognizer = () => {
   const [isCanvasTouched, setIsCanvasTouched] = useState(false);
   const [isSubmited, setIsSubmited] = useState(false);
   const { rpcState, rpcStatePending, refetch } = useReadRpcState();
+  console.log("🚀 ~ DigitRecognizer ~ rpcState:", rpcState);
 
   const onSuccess = () => refetch().then(() => setIsSubmited(true));
 

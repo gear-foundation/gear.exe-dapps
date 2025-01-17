@@ -16,9 +16,13 @@ export const useDigitRecognitionPredict = ({ onSuccess }: Params) => {
     abi: digitRecognitionAbi,
     eventName: "DigitRecognitionPredictReply",
     address: DIGIT_RECOGNITION_CONTRACT_ADDRESS,
+    // ! TODO
     onLogs() {
-      onSuccess?.();
-      setIsSubmiting(false);
+      console.log("DigitRecognitionPredictReply");
+      setTimeout(() => {
+        onSuccess?.();
+        setIsSubmiting(false);
+      }, 10000);
     },
   });
 
