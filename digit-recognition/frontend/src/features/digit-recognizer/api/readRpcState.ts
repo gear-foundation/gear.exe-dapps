@@ -1,12 +1,11 @@
 import { HexString } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
 import { useQuery } from "@tanstack/react-query";
-import { useReadContract, useWatchContractEvent } from "wagmi";
+import { useReadContract } from "wagmi";
 
 import { digitRecognitionAbi } from "./DigitRecognitionAbi";
 import { DIGIT_RECOGNITION_CONTRACT_ADDRESS, GEAR_API_NODE } from "@/consts";
 import { Result } from "../types";
-import { mirrorAbi } from "./mirrorAbi";
 
 export const readRpcState = async (mirrorId?: HexString) => {
   if (!mirrorId) return;
@@ -71,32 +70,31 @@ export const useReadRpcState = () => {
     enabled: !!mirrorId,
   });
 
-  useWatchContractEvent({
-    abi: mirrorAbi,
-    eventName: "StateChanged",
-    address: mirrorId as HexString,
-    // ! TODO: check
-    onLogs() {
-      console.log("StateChanged");
-      refetch();
-    },
-  });
+  const retryWhileDataChanged = (onSuccess?: () => void) =>
+    new Promise<void>((resolve) => {
+      const prevData = JSON.stringify(data);
 
-  // ! TODO: remove
-  // const retry = () =>
-  //   new Promise((resolve) => {
-  //     async (atempt = 0) => {
-  //       console.log("atempt", atempt);
-  //       const response = await refetch();
-  //       if (JSON.stringify(response.data) === JSON.stringify(data)) {
-  //         setTimeout(() => {
-  //           retry(atempt);
-  //         }, 1000);
-  //       } else {
-  //         resolve();
-  //       }
-  //     };
-  //   });
+      const retry = async (atempt = 0) => {
+        const response = await refetch();
+        const isSameData = JSON.stringify(response.data) === prevData;
 
-  return { rpcState: data, rpcStatePending: isPending, refetch };
+        if (isSameData) {
+          setTimeout(() => {
+            retry(atempt + 1);
+          }, 1000);
+        } else {
+          resolve();
+          onSuccess?.();
+        }
+      };
+
+      retry();
+    });
+
+  return {
+    rpcState: data,
+    rpcStatePending: isPending,
+    refetch,
+    retryWhileDataChanged,
+  };
 };

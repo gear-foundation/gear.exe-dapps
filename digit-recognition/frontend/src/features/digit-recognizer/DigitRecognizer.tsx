@@ -7,22 +7,30 @@ import {
   getFloatingPoint,
 } from "./utils";
 import { useDigitRecognitionPredict } from "./api/useDigitRecognitionPredict";
-import styles from "./DigitRecognizer.module.scss";
 import { useReadRpcState } from "./api/readRpcState";
+import styles from "./DigitRecognizer.module.scss";
 
 export const DigitRecognizer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCanvasTouched, setIsCanvasTouched] = useState(false);
   const [isSubmited, setIsSubmited] = useState(false);
-  const { rpcState, rpcStatePending, refetch } = useReadRpcState();
-  console.log("🚀 ~ DigitRecognizer ~ rpcState:", rpcState);
+  const [isSubmiting, setIsSubmiting] = useState(false);
 
-  const onSuccess = () => refetch().then(() => setIsSubmited(true));
+  const { rpcState, rpcStatePending, retryWhileDataChanged } =
+    useReadRpcState();
+
+  const onSuccess = () =>
+    retryWhileDataChanged(() => {
+      setIsSubmiting(false);
+      setIsSubmited(true);
+    });
+
+  const onError = () => setIsSubmiting(false);
 
   const { digitRecognitionPredict, reset, isPredictPending } =
-    useDigitRecognitionPredict({ onSuccess });
+    useDigitRecognitionPredict({ onSuccess, onError });
 
-  const isPending = rpcStatePending || isPredictPending;
+  const isPending = rpcStatePending || isPredictPending || isSubmiting;
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
@@ -47,6 +55,7 @@ export const DigitRecognizer = () => {
       : findMaxIndex(rpcState.map(getFloatingPoint));
 
   const onSubmit = () => {
+    setIsSubmiting(true);
     const flattenedPixelArray = getFlattenedPixelArray(canvasRef);
     digitRecognitionPredict(flattenedPixelArray);
   };

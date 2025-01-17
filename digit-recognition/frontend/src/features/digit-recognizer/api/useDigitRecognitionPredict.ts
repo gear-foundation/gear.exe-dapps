@@ -1,33 +1,25 @@
 import { useWatchContractEvent, useWriteContract } from "wagmi";
 import { digitRecognitionAbi } from "./DigitRecognitionAbi";
 import { DIGIT_RECOGNITION_CONTRACT_ADDRESS } from "@/consts";
-import { useState } from "react";
 
 type Params = {
   onSuccess: () => void;
+  onError: () => void;
 };
 
-export const useDigitRecognitionPredict = ({ onSuccess }: Params) => {
+export const useDigitRecognitionPredict = ({ onSuccess, onError }: Params) => {
   const { writeContract, reset, data, isPending } = useWriteContract();
-
-  const [isSubmiting, setIsSubmiting] = useState(false);
 
   useWatchContractEvent({
     abi: digitRecognitionAbi,
     eventName: "DigitRecognitionPredictReply",
     address: DIGIT_RECOGNITION_CONTRACT_ADDRESS,
-    // ! TODO
     onLogs() {
-      console.log("DigitRecognitionPredictReply");
-      setTimeout(() => {
-        onSuccess?.();
-        setIsSubmiting(false);
-      }, 10000);
+      onSuccess();
     },
   });
 
   const digitRecognitionPredict = async (pixels: number[]) => {
-    setIsSubmiting(true);
     writeContract(
       {
         abi: digitRecognitionAbi,
@@ -35,7 +27,7 @@ export const useDigitRecognitionPredict = ({ onSuccess }: Params) => {
         functionName: "fnDigitRecognitionPredict",
         args: [pixels, 0],
       },
-      { onError: () => setIsSubmiting(false) }
+      { onError }
     );
   };
 
@@ -43,6 +35,6 @@ export const useDigitRecognitionPredict = ({ onSuccess }: Params) => {
     digitRecognitionPredict,
     reset,
     data,
-    isPredictPending: isPending || isSubmiting,
+    isPredictPending: isPending,
   };
 };
