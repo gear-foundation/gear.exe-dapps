@@ -70,7 +70,7 @@ export const useReadRpcState = () => {
     enabled: !!mirrorId,
   });
 
-  const retryWhileDataChanged = (onSuccess?: () => void) =>
+  const retryWhileDataChanged = () =>
     new Promise<void>((resolve) => {
       const prevData = JSON.stringify(data);
 
@@ -84,7 +84,6 @@ export const useReadRpcState = () => {
           }, 1000);
         } else {
           resolve();
-          onSuccess?.();
         }
       };
 

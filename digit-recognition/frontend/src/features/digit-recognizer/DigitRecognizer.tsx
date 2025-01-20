@@ -20,7 +20,7 @@ export const DigitRecognizer = () => {
     useReadRpcState();
 
   const onSuccess = () =>
-    retryWhileDataChanged(() => {
+    retryWhileDataChanged().then(() => {
       setIsSubmiting(false);
       setIsSubmited(true);
     });
