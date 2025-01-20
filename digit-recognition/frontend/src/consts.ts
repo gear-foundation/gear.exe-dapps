@@ -6,3 +6,10 @@ export const ETH_NODE_ADDRESS = import.meta.env.VITE_ETH_NODE_ADDRESS;
 
 export const DIGIT_RECOGNITION_CONTRACT_ADDRESS = import.meta.env
   .VITE_CONTRACT_ADDRESS_DIGIT_RECOGNITION as `0x${string}`;
+
+console.log("envs:", {
+  PROJECT_ID,
+  GEAR_API_NODE,
+  ETH_NODE_ADDRESS,
+  DIGIT_RECOGNITION_CONTRACT_ADDRESS,
+});
