@@ -1,14 +1,11 @@
 import { Button, Card } from "@/components";
 import { DigitCanvas } from "./DigitCanvas";
 import { useRef, useState } from "react";
-import {
-  findMaxIndex,
-  getFlattenedPixelArray,
-  getFloatingPoint,
-} from "./utils";
+import { findMaxIndex, getFlattenedPixelArray } from "./utils";
 import { useDigitRecognitionPredict } from "./api/useDigitRecognitionPredict";
 import { useReadRpcState } from "./api/readRpcState";
 import styles from "./DigitRecognizer.module.scss";
+import { getFloatingPoint } from "@/lib/utils";
 
 export const DigitRecognizer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);

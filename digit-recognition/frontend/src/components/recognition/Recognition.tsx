@@ -1,4 +1,4 @@
-import { DigitRecognizer, CatIdentifier } from "@/features";
+import { DigitRecognizer, CatDogIdentifier } from "@/features";
 import { Layout } from "@/components";
 import styles from "./Recognition.module.scss";
 
@@ -10,14 +10,14 @@ export const Recognition = () => {
       <p className={styles.description}>
         //_Draw a digit or upload an image to experience the power of AI.
         Gear.EXE recognition model identifies handwritten numbers (0–9) or
-        determines if an image contains cats. Submit, see results instantly, and
-        start again.
+        determines if an image contains cats or dogs. Submit, see results
+        instantly, and start again.
       </p>
 
       <div className={styles.list}>
         <DigitRecognizer />
 
-        <CatIdentifier />
+        <CatDogIdentifier />
       </div>
     </Layout>
   );

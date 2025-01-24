@@ -1,6 +1,3 @@
-export type FixedPoint = {
-  num: number | string | bigint;
-  scale: number;
-};
+import { FixedPoint } from "@/lib/types";
 
 export type Result = FixedPoint[];
