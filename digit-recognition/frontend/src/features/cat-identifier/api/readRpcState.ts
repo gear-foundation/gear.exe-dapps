@@ -1,11 +1,12 @@
 import { HexString } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
 import { useQuery } from "@tanstack/react-query";
-import { useReadContract } from "wagmi";
+import { useReadContract, useWatchContractEvent } from "wagmi";
 
 import { catDogIdentifierAbi } from "./catDogIdentifierAbi";
 import { CAT_IDENTIFIER_CONTRACT_ADDRESS, GEAR_API_NODE } from "@/consts";
 import { CalcResult } from "../types";
+import { mirrorAbi } from "./mirrorAbi";
 
 export const readRpcState = async (mirrorId?: HexString) => {
   if (!mirrorId) return;
@@ -61,7 +62,11 @@ export const readRpcState = async (mirrorId?: HexString) => {
   return data;
 };
 
-export const useReadRpcState = () => {
+type Params = {
+  onSuccess: () => void;
+};
+
+export const useReadRpcState = ({ onSuccess }: Params) => {
   const { data: mirrorId } = useReadContract({
     abi: catDogIdentifierAbi,
     address: CAT_IDENTIFIER_CONTRACT_ADDRESS,
@@ -74,30 +79,21 @@ export const useReadRpcState = () => {
     enabled: !!mirrorId,
   });
 
-  const retryWhileDataChanged = () =>
-    new Promise<void>((resolve) => {
-      const prevData = JSON.stringify(data);
-
-      const retry = async (atempt = 0) => {
-        const response = await refetch();
-        const isSameData = JSON.stringify(response.data) === prevData;
-
-        if (isSameData) {
-          setTimeout(() => {
-            retry(atempt + 1);
-          }, 1000);
-        } else {
-          resolve();
-        }
-      };
-
-      retry();
-    });
+  useWatchContractEvent({
+    abi: mirrorAbi,
+    eventName: "StateChanged",
+    address: mirrorId as HexString,
+    onLogs() {
+      console.log("success reply");
+      onSuccess();
+      refetch();
+    },
+    enabled: !!mirrorId,
+  });
 
   return {
     rpcState: data,
     rpcStatePending: isPending,
     refetch,
-    retryWhileDataChanged,
   };
 };

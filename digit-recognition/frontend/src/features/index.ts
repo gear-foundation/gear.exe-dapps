@@ -1,2 +1,2 @@
-export { CatDogIdentifier } from "./cat-dog-identifier/CatDogIdentifier";
+export { CatIdentifier } from "./cat-identifier/CatIdentifier";
 export { DigitRecognizer } from "./digit-recognizer/DigitRecognizer";

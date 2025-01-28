@@ -1,8 +1,4 @@
-import {
-  useReadContract,
-  useWatchContractEvent,
-  useWriteContract,
-} from "wagmi";
+import { useReadContract, useWriteContract } from "wagmi";
 import { catDogIdentifierAbi } from "./catDogIdentifierAbi";
 import { CAT_IDENTIFIER_CONTRACT_ADDRESS } from "@/consts";
 import { mirrorAbi } from "./mirrorAbi";
@@ -11,11 +7,10 @@ import { TypeRegistry } from "@polkadot/types";
 import { numberArrayToHex } from "../utils";
 
 type Params = {
-  onSuccess: () => void;
   onError: () => void;
 };
 
-export const useCatsDogsPredictPredict = ({ onSuccess, onError }: Params) => {
+export const useCatsPredictPredict = ({ onError }: Params) => {
   const { writeContract, reset, data, isPending } = useWriteContract();
 
   const { data: mirrorId } = useReadContract({
@@ -24,17 +19,7 @@ export const useCatsDogsPredictPredict = ({ onSuccess, onError }: Params) => {
     functionName: "mirror",
   });
 
-  useWatchContractEvent({
-    abi: catDogIdentifierAbi,
-    eventName: "CnnCatsDogsPredictReply",
-    address: CAT_IDENTIFIER_CONTRACT_ADDRESS,
-    onLogs() {
-      console.log("success reply");
-      onSuccess();
-    },
-  });
-
-  const catsDogsPredict = async (pixels: number[]) => {
+  const catsPredict = async (pixels: number[]) => {
     // TODO: use fnCnnCatsDogsPredict when contract fixed
     // debugEncodedData(pixels);
     // const bytes = numberArrayToHex(pixels);
@@ -74,7 +59,7 @@ export const useCatsDogsPredictPredict = ({ onSuccess, onError }: Params) => {
   };
 
   return {
-    catsDogsPredict,
+    catsPredict,
     reset,
     data,
     isPredictPending: isPending,

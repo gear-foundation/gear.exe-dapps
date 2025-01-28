@@ -3,41 +3,35 @@ import { useRef, useState } from "react";
 import { handleImageToPixels } from "./utils";
 import { useReadRpcState } from "./api/readRpcState";
 import { getFloatingPoint } from "@/lib/utils";
-import { useCatsDogsPredictPredict } from "./api/useCatsDogsPredictPredict";
+import { useCatsPredictPredict } from "./api/useCatsPredictPredict";
 import { PROBABILITY_EDGE } from "./consts";
-import styles from "./CatDogIdentifier.module.scss";
+import styles from "./CatIdentifier.module.scss";
 
-export const CatDogIdentifier = () => {
+export const CatIdentifier = () => {
   const [image, setImage] = useState<string | null>(null);
   const [isSubmited, setIsSubmited] = useState(false);
   const [isSubmiting, setIsSubmiting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { rpcState, rpcStatePending, retryWhileDataChanged } =
-    useReadRpcState();
-  console.log("🚀 ~ CatDogIdentifier ~ rpcState:", rpcState);
-
-  const onSuccess = () =>
-    // ! TODO: same image can get same result
-    retryWhileDataChanged().then(() => {
-      setIsSubmiting(false);
-      setIsSubmited(true);
-    });
+  const onSuccess = () => {
+    setIsSubmiting(false);
+    setIsSubmited(true);
+  };
 
   const onError = () => setIsSubmiting(false);
 
-  const { isPredictPending, catsDogsPredict, reset } =
-    useCatsDogsPredictPredict({ onSuccess, onError });
+  const { rpcState, rpcStatePending } = useReadRpcState({ onSuccess });
+  const { catsPredict, reset } = useCatsPredictPredict({ onError });
 
   const probability =
     isSubmited && rpcState && rpcState.calculated
       ? getFloatingPoint(rpcState.probability)
       : null;
 
-  const isPending = rpcStatePending || isPredictPending || isSubmiting;
+  const isPending = rpcStatePending || isSubmiting;
 
   console.log(
-    "🚀 ~ CatDogIdentifier ~ probability:",
+    "🚀 ~ CatIdentifier ~ probability:",
     rpcState && rpcState.calculated
       ? getFloatingPoint(rpcState.probability)
       : null
@@ -48,21 +42,14 @@ export const CatDogIdentifier = () => {
       return null;
     }
 
-    let isCat = "False";
-    let isDog = "False";
-
-    if (probability < PROBABILITY_EDGE) {
-      isCat = "True";
-    }
-    if (probability > 1 - PROBABILITY_EDGE) {
-      isDog = "True";
-    }
-
     return (
-      <>
-        <div>Cat = {isCat}</div>
-        <div>Dog = {isDog}</div>
-      </>
+      <div>
+        Cat in the image:{" "}
+        <span className={styles.result}>
+          {probability < PROBABILITY_EDGE ? "recognized" : "not recognized  "}
+        </span>{" "}
+        (confidence score {(1 - probability * 100).toFixed(2)}%).
+      </div>
     );
   })();
 
@@ -96,7 +83,7 @@ export const CatDogIdentifier = () => {
     if (!image) return;
     setIsSubmiting(true);
     const pixels = await handleImageToPixels(image);
-    catsDogsPredict(pixels);
+    catsPredict(pixels);
   };
 
   const onReset = () => {
@@ -106,10 +93,10 @@ export const CatDogIdentifier = () => {
 
   return (
     <Card
-      title="Cat or dog identifier"
+      title="Cat identifier"
       description={
         result ??
-        "Upload any image to see if the AI detects a cat or a dog. The model will analyze the picture and let you know if a cat or dog is present."
+        "Upload any image to see if the AI detects a cat. The model will analyze the picture and let you know if a cat is present."
       }
       canvasSlot={
         <div
