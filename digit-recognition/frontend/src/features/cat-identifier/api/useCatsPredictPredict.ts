@@ -2,7 +2,6 @@ import { useReadContract, useWriteContract } from "wagmi";
 import { catDogIdentifierAbi } from "./catDogIdentifierAbi";
 import { CAT_IDENTIFIER_CONTRACT_ADDRESS } from "@/consts";
 import { mirrorAbi } from "./mirrorAbi";
-import { HexString } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
 import { numberArrayToHex } from "../utils";
 
@@ -50,7 +49,7 @@ export const useCatsPredictPredict = ({ onError }: Params) => {
     writeContract(
       {
         abi: mirrorAbi,
-        address: mirrorId as HexString,
+        address: mirrorId as `0x${string}`,
         functionName: "sendMessage",
         args: [payload, 0],
       },
