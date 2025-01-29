@@ -13,19 +13,19 @@ export const DigitRecognizer = () => {
   const [isSubmited, setIsSubmited] = useState(false);
   const [isSubmiting, setIsSubmiting] = useState(false);
 
-  const { rpcState, rpcStatePending, retryWhileDataChanged } =
-    useReadRpcState();
-
-  const onSuccess = () =>
-    retryWhileDataChanged().then(() => {
-      setIsSubmiting(false);
-      setIsSubmited(true);
-    });
-
+  const onSuccess = () => {
+    setIsSubmiting(false);
+    setIsSubmited(true);
+  };
   const onError = () => setIsSubmiting(false);
 
-  const { digitRecognitionPredict, reset, isPredictPending } =
-    useDigitRecognitionPredict({ onSuccess, onError });
+  const { rpcState, rpcStatePending } = useReadRpcState({
+    isSubmiting,
+    onSuccess,
+  });
+
+  const { digitRecognitionPredict, isPredictPending } =
+    useDigitRecognitionPredict({ onError });
 
   const isPending = rpcStatePending || isPredictPending || isSubmiting;
 
@@ -43,14 +43,16 @@ export const DigitRecognizer = () => {
   const onReset = () => {
     clearCanvas();
     setIsSubmited(false);
-    reset();
   };
 
   const predictedDigit =
     !isSubmited || rpcState === undefined
       ? null
       : findMaxIndex(rpcState.map(getFloatingPoint));
-
+  console.log(
+    "!!!",
+    rpcState === undefined ? null : findMaxIndex(rpcState.map(getFloatingPoint))
+  );
   const onSubmit = () => {
     setIsSubmiting(true);
     const flattenedPixelArray = getFlattenedPixelArray(canvasRef);
@@ -75,7 +77,8 @@ export const DigitRecognizer = () => {
       }
       headerSlot={
         predictedDigit === null &&
-        !isPending && (
+        !isPending &&
+        isCanvasTouched && (
           <Button
             variant="outline"
             size="xs"
