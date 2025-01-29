@@ -92,7 +92,7 @@ export const CatIdentifier = () => {
       title="Cat identifier"
       description={
         result ??
-        "Upload any image to see if the AI detects a cat. The model will analyze the picture and let you know if a cat is present."
+        "Upload any image to see if the AI detects a cat. The model will analyze the picture and let you know if a cat is recognized."
       }
       canvasSlot={
         <div
