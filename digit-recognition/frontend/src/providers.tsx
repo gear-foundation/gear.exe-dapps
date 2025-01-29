@@ -4,14 +4,8 @@ import { WagmiProvider, http } from "wagmi";
 import { createAppKit } from "@reown/appkit/react";
 import { AppKitNetwork } from "@reown/appkit/networks";
 import * as allNetworks from "@reown/appkit/networks";
-import {
-  ETH_CHAIN_ID,
-  ETH_NODE_ADDRESS,
-  GEAR_API_NODE,
-  PROJECT_ID,
-} from "./consts";
+import { ETH_CHAIN_ID, ETH_NODE_ADDRESS, PROJECT_ID } from "./consts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ApiProvider as GearApiProvider } from "@gear-js/react-hooks";
 
 const metadata = {
   name: "Web3Modal",
@@ -57,7 +51,7 @@ createAppKit({
   },
   enableWalletConnect: false,
   enableWalletGuide: false,
-  
+
   allWallets: "HIDE",
   themeMode: "dark",
   themeVariables: {
@@ -65,7 +59,7 @@ createAppKit({
     "--w3m-border-radius-master": "0px",
     "--w3m-font-size-master": "12px",
     "--w3m-accent": "#ffffff",
-    "--w3m-color-mix": '#a8f593'
+    "--w3m-color-mix": "#a8f593",
   },
 });
 
@@ -93,13 +87,5 @@ const queryClient = new QueryClient({
 export function QueryProvider({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-}
-
-export function ApiProvider({ children }: PropsWithChildren) {
-  return (
-    <GearApiProvider initialArgs={{ endpoint: GEAR_API_NODE }}>
-      {children}
-    </GearApiProvider>
   );
 }
