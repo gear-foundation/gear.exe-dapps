@@ -2,19 +2,10 @@ import { DigitRecognizer, CatIdentifier } from "@/features";
 import { Layout } from "@/components";
 import ExportSvg from "@/assets/icons/export.svg?react";
 import styles from "./Recognition.module.scss";
-import {
-  CAT_IDENTIFIER_CONTRACT_ADDRESS,
-  DIGIT_RECOGNITION_CONTRACT_ADDRESS,
-} from "@/consts";
-import { useReadContract } from "wagmi";
-import { catDogIdentifierAbi } from "@/features/cat-identifier/api/catDogIdentifierAbi";
+import { useAccount } from "wagmi";
 
 export const Recognition = () => {
-  const { data: catIdentifierMirrorId } = useReadContract({
-    abi: catDogIdentifierAbi,
-    address: CAT_IDENTIFIER_CONTRACT_ADDRESS,
-    functionName: "mirror",
-  });
+  const ethAccount = useAccount();
 
   return (
     <Layout>
@@ -35,21 +26,12 @@ export const Recognition = () => {
 
       <div className={styles.links}>
         <a
-          href={`https://holesky.etherscan.io/address/${DIGIT_RECOGNITION_CONTRACT_ADDRESS}`}
+          href={`https://holesky.etherscan.io/address/${ethAccount.address}`}
           target="_blank"
           rel="noopener noreferrer"
           className={styles.link}
         >
-          View digit recognizer in Blockchain Explorer <ExportSvg />
-        </a>
-
-        <a
-          href={`https://holesky.etherscan.io/address/${catIdentifierMirrorId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.link}
-        >
-          View Cat identifier in Blockchain Explorer <ExportSvg />
+          View in Blockchain Explorer <ExportSvg />
         </a>
       </div>
     </Layout>
