@@ -63,10 +63,11 @@ export const readRpcState = async (mirrorId?: HexString) => {
 };
 
 type Params = {
+  isSubmiting?: boolean;
   onSuccess: () => void;
 };
 
-export const useReadRpcState = ({ onSuccess }: Params) => {
+export const useReadRpcState = ({ isSubmiting, onSuccess }: Params) => {
   const { data: mirrorId } = useReadContract({
     abi: catDogIdentifierAbi,
     address: CAT_IDENTIFIER_CONTRACT_ADDRESS,
@@ -84,9 +85,11 @@ export const useReadRpcState = ({ onSuccess }: Params) => {
     eventName: "StateChanged",
     address: mirrorId as HexString,
     onLogs() {
-      console.log("success reply");
-      onSuccess();
-      refetch();
+      if (isSubmiting) {
+        console.log("success reply");
+        onSuccess();
+        refetch();
+      }
     },
     enabled: !!mirrorId,
   });

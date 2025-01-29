@@ -20,7 +20,10 @@ export const CatIdentifier = () => {
 
   const onError = () => setIsSubmiting(false);
 
-  const { rpcState, rpcStatePending } = useReadRpcState({ onSuccess });
+  const { rpcState, rpcStatePending } = useReadRpcState({
+    isSubmiting,
+    onSuccess,
+  });
   const { catsPredict, reset } = useCatsPredictPredict({ onError });
 
   const probability =
@@ -29,13 +32,6 @@ export const CatIdentifier = () => {
       : null;
 
   const isPending = rpcStatePending || isSubmiting;
-
-  console.log(
-    "🚀 ~ CatIdentifier ~ probability:",
-    rpcState && rpcState.calculated
-      ? getFloatingPoint(rpcState.probability)
-      : null
-  );
 
   const result = (() => {
     if (probability === null) {
@@ -48,7 +44,7 @@ export const CatIdentifier = () => {
         <span className={styles.result}>
           {probability < PROBABILITY_EDGE ? "recognized" : "not recognized  "}
         </span>{" "}
-        (confidence score {(1 - probability * 100).toFixed(2)}%).
+        (confidence score {((1 - probability) * 100).toFixed(2)}%).
       </div>
     );
   })();

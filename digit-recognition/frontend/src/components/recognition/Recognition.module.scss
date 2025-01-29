@@ -13,3 +13,22 @@
   justify-content: space-between;
   gap: 32px;
 }
+
+.links {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 80px;
+  margin-bottom: 40px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 12px;
+}
