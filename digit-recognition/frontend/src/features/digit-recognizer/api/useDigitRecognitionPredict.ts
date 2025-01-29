@@ -1,23 +1,13 @@
-import { useWatchContractEvent, useWriteContract } from "wagmi";
+import { useWriteContract } from "wagmi";
 import { digitRecognitionAbi } from "./DigitRecognitionAbi";
 import { DIGIT_RECOGNITION_CONTRACT_ADDRESS } from "@/consts";
 
 type Params = {
-  onSuccess: () => void;
   onError: () => void;
 };
 
-export const useDigitRecognitionPredict = ({ onSuccess, onError }: Params) => {
-  const { writeContract, reset, data, isPending } = useWriteContract();
-
-  useWatchContractEvent({
-    abi: digitRecognitionAbi,
-    eventName: "DigitRecognitionPredictReply",
-    address: DIGIT_RECOGNITION_CONTRACT_ADDRESS,
-    onLogs() {
-      onSuccess();
-    },
-  });
+export const useDigitRecognitionPredict = ({ onError }: Params) => {
+  const { writeContract, data, isPending } = useWriteContract();
 
   const digitRecognitionPredict = async (pixels: number[]) => {
     writeContract(
@@ -33,7 +23,6 @@ export const useDigitRecognitionPredict = ({ onSuccess, onError }: Params) => {
 
   return {
     digitRecognitionPredict,
-    reset,
     data,
     isPredictPending: isPending,
   };
