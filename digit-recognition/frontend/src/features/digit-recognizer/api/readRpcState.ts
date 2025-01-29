@@ -1,4 +1,3 @@
-import { HexString } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
 import { useQuery } from "@tanstack/react-query";
 import { useReadContract, useWatchContractEvent } from "wagmi";
@@ -8,7 +7,7 @@ import { DIGIT_RECOGNITION_CONTRACT_ADDRESS, GEAR_API_NODE } from "@/consts";
 import { Result } from "../types";
 import { mirrorAbi } from "./mirrorAbi";
 
-export const readRpcState = async (mirrorId?: HexString) => {
+export const readRpcState = async (mirrorId?: `0x${string}`) => {
   if (!mirrorId) return;
 
   const types: Record<string, any> = {
@@ -72,21 +71,39 @@ export const useReadRpcState = ({ isSubmiting, onSuccess }: Params) => {
 
   const { data, isPending, refetch } = useQuery({
     queryKey: ["readState", mirrorId],
-    queryFn: async () => await readRpcState(mirrorId as HexString),
+    queryFn: async () => await readRpcState(mirrorId as `0x${string}`),
     enabled: !!mirrorId,
   });
+
+  const retryWhileDataChanged = () =>
+    new Promise<void>((resolve) => {
+      const prevData = JSON.stringify(data);
+
+      const retry = async (atempt = 0) => {
+        const response = await refetch();
+        const isSameData = JSON.stringify(response.data) === prevData;
+
+        if (isSameData) {
+          setTimeout(() => {
+            retry(atempt + 1);
+          }, 1000);
+        } else {
+          console.log("resolved on atempt", atempt);
+          resolve();
+        }
+      };
+
+      retry();
+    });
 
   useWatchContractEvent({
     abi: mirrorAbi,
     eventName: "StateChanged",
-    address: mirrorId as HexString,
+    address: mirrorId as `0x${string}`,
     onLogs() {
       if (isSubmiting) {
         console.log("success reply");
-        setTimeout(() => {
-          onSuccess();
-          refetch();
-        }, 1000);
+        retryWhileDataChanged().then(() => onSuccess());
       }
     },
     enabled: !!mirrorId,

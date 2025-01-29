@@ -45,14 +45,14 @@ export const DigitRecognizer = () => {
     setIsSubmited(false);
   };
 
-  const predictedDigit =
-    !isSubmited || rpcState === undefined
+  const currentState =
+    rpcState === undefined
       ? null
       : findMaxIndex(rpcState.map(getFloatingPoint));
-  console.log(
-    "!!!",
-    rpcState === undefined ? null : findMaxIndex(rpcState.map(getFloatingPoint))
-  );
+
+  const predictedDigit = isSubmited ? currentState : null;
+  console.log("current state:", currentState);
+
   const onSubmit = () => {
     setIsSubmiting(true);
     const flattenedPixelArray = getFlattenedPixelArray(canvasRef);

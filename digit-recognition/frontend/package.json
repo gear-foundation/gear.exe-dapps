@@ -10,8 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@gear-js/api": "0.39.0",
-    "@gear-js/react-hooks": "0.14.1",
     "@polkadot/types": "14.3.1",
     "@radix-ui/react-slot": "1.1.0",
     "@reown/appkit": "^1.6.0",
