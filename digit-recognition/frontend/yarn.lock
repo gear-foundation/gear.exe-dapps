@@ -3604,11 +3604,6 @@ jiti@^2.1.2:
   resolved "https://registry.yarnpkg.com/jiti/-/jiti-2.4.1.tgz#4de9766ccbfa941d9b6390d2b159a4b295a52e6b"
   integrity sha512-yPBThwecp1wS9DmoA4x4KR2h3QoslacnDR8ypuFM962kI4/456Iy1oHx2RAgh4jfZNdn0bctsdadceiBUgpU1g==
 
-jotai@2.10.0:
-  version "2.10.0"
-  resolved "https://registry.yarnpkg.com/jotai/-/jotai-2.10.0.tgz#7483b81ab21ba28778f04b29368728f25efe4e89"
-  integrity sha512-8W4u0aRlOIwGlLQ0sqfl/c6+eExl5D8lZgAUolirZLktyaj4WnxO/8a0HEPmtriQAB6X5LMhXzZVmw02X0P0qQ==
-
 "js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
@@ -4520,11 +4515,6 @@ sails-js-parser@0.0.1:
   resolved "https://registry.yarnpkg.com/sails-js-parser/-/sails-js-parser-0.0.1.tgz#88cec48cab33be54b8364313fdcc53393670aa56"
   integrity sha512-N1ab0Hl5xdYufDCGP7pB5Zxyvoqjxh8rH8Df3nQTlgIW7y+SH3kYedW7RLmZnDO6KEI8ArtPtXID+MLiQkRh8g==
 
-sails-js@^0.3.0:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/sails-js/-/sails-js-0.3.1.tgz#22ff70568c1fb789cbdaed53e55ac2a0a8046221"
-  integrity sha512-zqs+C7jL9P7q7tPzSd7MhoHUAY8uCHEdEfl7QhmmmTFOhZlY487VndoPUa9qkue18VIp5eAHK+1ong0MRCc1ig==
-
 sass@1.62.0:
   version "1.62.0"
   resolved "https://registry.yarnpkg.com/sass/-/sass-1.62.0.tgz#3686b2195b93295d20765135e562366b33ece37d"
@@ -4876,11 +4866,6 @@ uri-js@^4.2.2:
   integrity sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==
   dependencies:
     punycode "^2.1.0"
-
-use-scramble@2.2.15:
-  version "2.2.15"
-  resolved "https://registry.yarnpkg.com/use-scramble/-/use-scramble-2.2.15.tgz#443b41f097000d4b5a67c39c0fd8077b4e6977f7"
-  integrity sha512-3+ngTV6OpkY9JT75FM4JYcspmpP7cd/h0/5KqsMU2jcdBD+SAuBMmLqLu0N3/7t8NsfdwJjD3BBeKtT+qZWKew==
 
 use-sync-external-store@1.2.0:
   version "1.2.0"

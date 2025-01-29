@@ -83,8 +83,10 @@ export const useReadRpcState = ({ isSubmiting, onSuccess }: Params) => {
     onLogs() {
       if (isSubmiting) {
         console.log("success reply");
-        onSuccess();
-        refetch();
+        setTimeout(() => {
+          onSuccess();
+          refetch();
+        }, 1000);
       }
     },
     enabled: !!mirrorId,
