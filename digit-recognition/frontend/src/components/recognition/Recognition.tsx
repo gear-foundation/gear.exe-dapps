@@ -31,7 +31,7 @@ export const Recognition = () => {
           rel="noopener noreferrer"
           className={styles.link}
         >
-          View in Blockchain Explorer <ExportSvg />
+          <ExportSvg /> View in Blockchain Explorer
         </a>
       </div>
     </Layout>

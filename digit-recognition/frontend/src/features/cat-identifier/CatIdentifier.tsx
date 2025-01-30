@@ -24,7 +24,7 @@ export const CatIdentifier = () => {
     isSubmiting,
     onSuccess,
   });
-  const { catsPredict, reset } = useCatsPredictPredict({ onError });
+  const { catsPredict, reset, mirrorId } = useCatsPredictPredict({ onError });
 
   const probability =
     isSubmited && rpcState && rpcState.calculated
@@ -94,6 +94,7 @@ export const CatIdentifier = () => {
         result ??
         "Upload any image to see if the AI detects a cat. The model will analyze the picture and let you know if a cat is recognized."
       }
+      address={mirrorId}
       canvasSlot={
         <div
           onDragOver={handleDragOver}

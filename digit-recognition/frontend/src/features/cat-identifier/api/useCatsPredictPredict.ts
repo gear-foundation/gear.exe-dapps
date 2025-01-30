@@ -12,11 +12,13 @@ type Params = {
 export const useCatsPredictPredict = ({ onError }: Params) => {
   const { writeContract, reset, data, isPending } = useWriteContract();
 
-  const { data: mirrorId } = useReadContract({
+  const { data: mirror } = useReadContract({
     abi: catDogIdentifierAbi,
     address: CAT_IDENTIFIER_CONTRACT_ADDRESS,
     functionName: "mirror",
   });
+
+  const mirrorId = mirror as `0x${string}`;
 
   const catsPredict = async (pixels: number[]) => {
     // TODO: use fnCnnCatsDogsPredict when contract fixed
@@ -49,7 +51,7 @@ export const useCatsPredictPredict = ({ onError }: Params) => {
     writeContract(
       {
         abi: mirrorAbi,
-        address: mirrorId as `0x${string}`,
+        address: mirrorId,
         functionName: "sendMessage",
         args: [payload, 0],
       },
@@ -58,6 +60,7 @@ export const useCatsPredictPredict = ({ onError }: Params) => {
   };
 
   return {
+    mirrorId,
     catsPredict,
     reset,
     data,
