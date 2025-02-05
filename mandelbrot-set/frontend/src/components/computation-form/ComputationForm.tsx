@@ -21,7 +21,8 @@ export const ComputationForm = () => {
 
   const { writeContract, isPending } = useWriteContract();
 
-  const { refetch, rpcState, rpcStatePending } = useReadRpcState();
+  const { retryWhileDataChanged, rpcState, rpcStatePending } =
+    useReadRpcState();
 
   useWatchContractEvent({
     abi,
@@ -30,8 +31,7 @@ export const ComputationForm = () => {
     batch: false,
     onLogs(logs) {
       console.log("ManagerGenerateAndStorePointsReply", logs);
-      setIsLoading(false);
-      refetch();
+      retryWhileDataChanged().then(() => setIsLoading(false));
     },
   });
 
@@ -42,8 +42,7 @@ export const ComputationForm = () => {
     batch: false,
     onLogs(logs) {
       console.log("ManagerRestartReply", logs);
-      setIsLoading(false);
-      refetch();
+      retryWhileDataChanged().then(() => setIsLoading(false));
     },
   });
 
@@ -107,6 +106,7 @@ export const ComputationForm = () => {
   const chainName = ethAccount.chain!.name;
   const hasState = rpcState && rpcState.length > 0;
   const pending = rpcStatePending || isPending || isLoading;
+  const disabled = pending || hasState;
 
   return (
     <Layout className="flex flex-col gap-5">
@@ -123,7 +123,7 @@ export const ComputationForm = () => {
         onChange={(event) => {
           setMaxIter(Number(event.currentTarget.value) || 0);
         }}
-        disabled={hasState}
+        disabled={disabled}
       />
 
       <Input
@@ -132,7 +132,7 @@ export const ComputationForm = () => {
         onChange={(event) => {
           setWidth(Number(event.currentTarget.value) || 0);
         }}
-        disabled={hasState}
+        disabled={disabled}
       />
 
       <Input
@@ -141,7 +141,7 @@ export const ComputationForm = () => {
         onChange={(event) => {
           setHeight(Number(event.currentTarget.value) || 0);
         }}
-        disabled={hasState}
+        disabled={disabled}
       />
 
       <div style={{ display: "flex", gap: "12px" }}>

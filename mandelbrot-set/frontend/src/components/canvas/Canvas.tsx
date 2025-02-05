@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
-import { FixedPoint, Result } from "../../api/lib";
+import { PointResult } from "../../api/lib";
 
 type Props = {
-  nodes: Result[];
+  nodes: PointResult[];
 };
 
 const MAX_ITER = 100;
@@ -37,17 +37,22 @@ export const Canvas = ({ nodes }: Props) => {
     };
 
     const getColor = (iter: number) => {
-      const ratio = 1 - iter / MAX_ITER;
+      const ratio = Math.max(1 - iter / MAX_ITER, 0);
       return `rgb(0, ${Math.floor(255 * ratio)}, ${Math.round(128 * ratio)})`;
     };
 
-    const getFloatingPoint = ({ num, scale }: FixedPoint) => {
-      return Number(Number(num) / Math.pow(10, Number(scale)));
+    const getFloatingPoint = (num: number) => {
+      return num / Math.pow(2, 32);
     };
 
     nodes.forEach(({ c_re, c_im, iter }) => {
-      const x = mapToPixel(getFloatingPoint(c_re), reMin, reMax, width);
-      const y = mapToPixel(getFloatingPoint(c_im), imMin, imMax, height);
+      const x = mapToPixel(getFloatingPoint(Number(c_re)), reMin, reMax, width);
+      const y = mapToPixel(
+        getFloatingPoint(Number(c_im)),
+        imMin,
+        imMax,
+        height
+      );
       ctx.fillStyle = getColor(iter);
       ctx.fillRect(x, y, 1, 1);
     });
