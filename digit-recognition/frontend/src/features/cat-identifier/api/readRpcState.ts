@@ -1,3 +1,4 @@
+import { HexString } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
 import { useQuery } from "@tanstack/react-query";
 import { useReadContract, useWatchContractEvent } from "wagmi";
@@ -7,7 +8,7 @@ import { CAT_IDENTIFIER_CONTRACT_ADDRESS, GEAR_API_NODE } from "@/consts";
 import { CalcResult } from "../types";
 import { mirrorAbi } from "./mirrorAbi";
 
-export const readRpcState = async (mirrorId?: `0x${string}`) => {
+export const readRpcState = async (mirrorId?: HexString) => {
   if (!mirrorId) return;
 
   const types: Record<string, any> = {
@@ -75,14 +76,14 @@ export const useReadRpcState = ({ isSubmiting, onSuccess }: Params) => {
 
   const { data, isPending, refetch } = useQuery({
     queryKey: ["readState", mirrorId],
-    queryFn: async () => await readRpcState(mirrorId as `0x${string}`),
+    queryFn: async () => await readRpcState(mirrorId as HexString),
     enabled: !!mirrorId,
   });
 
   useWatchContractEvent({
     abi: mirrorAbi,
     eventName: "StateChanged",
-    address: mirrorId as `0x${string}`,
+    address: mirrorId as HexString,
     onLogs() {
       if (isSubmiting) {
         console.log("success reply");

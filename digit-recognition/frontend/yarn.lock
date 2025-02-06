@@ -397,6 +397,11 @@
     ethereum-cryptography "^2.0.0"
     micro-ftch "^0.3.1"
 
+"@gear-js/api@^0.41.0":
+  version "0.41.0"
+  resolved "https://registry.yarnpkg.com/@gear-js/api/-/api-0.41.0.tgz#0610fb98f9d888ef2de65b5f448952592215caf0"
+  integrity sha512-Cg9qAIm1DGoqGqI4rJJv4Z9/UBAWGJ+E0nSds/C5QDJarFmWyz2bTRt4Oh4RROYitPUOHbGhw1guBx+Ze5Bt8A==
+
 "@humanfs/core@^0.19.1":
   version "0.19.1"
   resolved "https://registry.yarnpkg.com/@humanfs/core/-/core-0.19.1.tgz#17c55ca7d426733fe3c561906b8173c336b40a77"

@@ -1,8 +1,9 @@
+import { HexString } from "@gear-js/api";
+import { TypeRegistry } from "@polkadot/types";
 import { useReadContract, useWriteContract } from "wagmi";
 import { catDogIdentifierAbi } from "./catDogIdentifierAbi";
 import { CAT_IDENTIFIER_CONTRACT_ADDRESS } from "@/consts";
 import { mirrorAbi } from "./mirrorAbi";
-import { TypeRegistry } from "@polkadot/types";
 import { numberArrayToHex } from "../utils";
 
 type Params = {
@@ -18,7 +19,7 @@ export const useCatsPredictPredict = ({ onError }: Params) => {
     functionName: "mirror",
   });
 
-  const mirrorId = mirror as `0x${string}`;
+  const mirrorId = mirror as HexString;
 
   const catsPredict = async (pixels: number[]) => {
     // TODO: use fnCnnCatsDogsPredict when contract fixed
