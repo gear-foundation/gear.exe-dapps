@@ -2,7 +2,7 @@ import { HexString } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
 import { useQuery } from "@tanstack/react-query";
 import { useReadContract } from "wagmi";
-import { Result } from "./lib";
+import { PointResult } from "./lib";
 import { CONTRACT_ADDRESS, GEAR_API_NODE } from "../consts";
 import { abi } from "../assets/abi";
 
@@ -14,13 +14,12 @@ export const readRpcState = async (
   endIndex = RESPONSE_SIZE
 ) => {
   if (!mirrorId) return [];
+  console.log("read state from startIndex:", startIndex);
 
   const types: Record<string, any> = {
-    FixedPoint: { num: "i64", scale: "u32" },
-    Point: { c_re: "FixedPoint", c_im: "FixedPoint" },
-    Result: {
-      c_re: "FixedPoint",
-      c_im: "FixedPoint",
+    PointResult: {
+      c_re: "i128",
+      c_im: "i128",
       iter: "u32",
       checked: "bool",
     },
@@ -65,11 +64,11 @@ export const readRpcState = async (
   const json = await response.json();
 
   const result = registry.createType(
-    "(String, String, Vec<Result>)",
+    "(String, String, Vec<PointResult>)",
     json.result.payload
   );
 
-  let data = result[2].toJSON() as unknown as Array<Result>;
+  let data = result[2].toJSON() as unknown as Array<PointResult>;
 
   if (data?.length === RESPONSE_SIZE) {
     let newData = await readRpcState(
@@ -97,5 +96,32 @@ export const useReadRpcState = () => {
     queryFn: async () => await readRpcState(mirrorId as HexString),
   });
 
-  return { rpcState: data, rpcStatePending: isPending, refetch };
+  const retryWhileDataChanged = () =>
+    new Promise<void>((resolve) => {
+      const isEmptyPrevData = data?.length === 0;
+
+      const retry = async (atempt = 0) => {
+        const response = await refetch();
+        const isEmptyNextData = response.data?.length === 0;
+        const isDataChanged = isEmptyPrevData !== isEmptyNextData;
+
+        if (isDataChanged) {
+          console.log("resolved on atempt", atempt);
+          resolve();
+        } else {
+          setTimeout(() => {
+            retry(atempt + 1);
+          }, 1000);
+        }
+      };
+
+      retry();
+    });
+
+  return {
+    rpcState: data,
+    rpcStatePending: isPending,
+    refetch,
+    retryWhileDataChanged,
+  };
 };
