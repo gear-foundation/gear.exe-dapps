@@ -7,15 +7,11 @@ export interface FixedPoint {
   scale: number;
 }
 
-export interface Point {
-  c_re: FixedPoint;
-  c_im: FixedPoint;
-}
-
-export interface Result {
-  c_re: FixedPoint;
-  c_im: FixedPoint;
+export interface PointResult {
+  c_re: number | string | bigint;
+  c_im: number | string | bigint;
   iter: number;
+  checked: boolean;
 }
 
 export class Program {
@@ -25,8 +21,7 @@ export class Program {
   constructor(public api: GearApi, public programId?: `0x${string}`) {
     const types: Record<string, any> = {
       FixedPoint: { num: "i64", scale: "u32" },
-      Point: { c_re: "String", c_im: "String" },
-      Result: { c_re: "String", c_im: "String", iter: "u32" },
+      PointResult: { c_re: "i128", c_im: "i128", iter: "u32", checked: "bool" },
     };
 
     this.registry = new TypeRegistry();
@@ -85,15 +80,16 @@ export class Manager {
 
   public checkPointsSet(
     max_iter: number,
-    batch_size: number
+    batch_size: number,
+    continue_checking: boolean
   ): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error("Program ID is not set");
     return new TransactionBuilder<null>(
       this._program.api,
       this._program.registry,
       "send_message",
-      ["Manager", "CheckPointsSet", max_iter, batch_size],
-      "(String, String, u32, u32)",
+      ["Manager", "CheckPointsSet", max_iter, batch_size, continue_checking],
+      "(String, String, u32, u32, bool)",
       "Null",
       this._program.programId
     );
@@ -106,7 +102,11 @@ export class Manager {
     x_max: FixedPoint,
     y_min: FixedPoint,
     y_max: FixedPoint,
-    points_per_call: number
+    points_per_call: number,
+    continue_generation: boolean,
+    check_points_after_generation: boolean,
+    max_iter: number,
+    batch_size: number
   ): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error("Program ID is not set");
     return new TransactionBuilder<null>(
@@ -123,8 +123,12 @@ export class Manager {
         y_min,
         y_max,
         points_per_call,
+        continue_generation,
+        check_points_after_generation,
+        max_iter,
+        batch_size,
       ],
-      "(String, String, u32, u32, FixedPoint, FixedPoint, FixedPoint, FixedPoint, u32)",
+      "(String, String, u32, u32, FixedPoint, FixedPoint, FixedPoint, FixedPoint, u32, bool, bool, u32, u32)",
       "Null",
       this._program.programId
     );
@@ -144,7 +148,7 @@ export class Manager {
   }
 
   public resultCalculated(
-    points: Array<Point>,
+    indexes: Array<number>,
     results: Array<number>
   ): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error("Program ID is not set");
@@ -152,8 +156,8 @@ export class Manager {
       this._program.api,
       this._program.registry,
       "send_message",
-      ["Manager", "ResultCalculated", points, results],
-      "(String, String, Vec<Point>, Vec<u32>)",
+      ["Manager", "ResultCalculated", indexes, results],
+      "(String, String, Vec<u32>, Vec<u32>)",
       "Null",
       this._program.programId
     );
@@ -203,33 +207,6 @@ export class Manager {
     return result[2].toJSON() as unknown as Array<ActorId>;
   }
 
-  public async getPoints(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`
-  ): Promise<Array<Point>> {
-    const payload = this._program.registry
-      .createType("(String, String)", ["Manager", "GetPoints"])
-      .toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId!,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    if (!reply.code.isSuccess)
-      throw new Error(
-        this._program.registry.createType("String", reply.payload).toString()
-      );
-    const result = this._program.registry.createType(
-      "(String, String, Vec<Point>)",
-      reply.payload
-    );
-    return result[2].toJSON() as unknown as Array<Point>;
-  }
-
   public async getPointsLen(
     originAddress?: string,
     value?: number | string | bigint,
@@ -263,7 +240,7 @@ export class Manager {
     originAddress?: string,
     value?: number | string | bigint,
     atBlock?: `0x${string}`
-  ): Promise<Array<Result>> {
+  ): Promise<Array<PointResult>> {
     const payload = this._program.registry
       .createType("(String, String, u32, u32)", [
         "Manager",
@@ -285,10 +262,10 @@ export class Manager {
         this._program.registry.createType("String", reply.payload).toString()
       );
     const result = this._program.registry.createType(
-      "(String, String, Vec<Result>)",
+      "(String, String, Vec<PointResult>)",
       reply.payload
     );
-    return result[2].toJSON() as unknown as Array<Result>;
+    return result[2].toJSON() as unknown as Array<PointResult>;
   }
 
   public async pointsSent(

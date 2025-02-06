@@ -1,6 +1,4 @@
 import { FixedPoint } from "../types";
-
-export { mergeRefs } from "./merge-refs";
 export { isMobileDevice, isMobile } from "./device-detection";
 
 export const copyToClipboard = async ({

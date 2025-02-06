@@ -79,11 +79,11 @@ export const DigitCanvas = ({
       <div className={styles.drawArea}>
         <canvas
           ref={canvasRef}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          style={{ width: "100%", height: "100%", borderRadius: "50%" }}
+          onPointerDown={startDrawing}
+          onPointerMove={draw}
+          onPointerUp={stopDrawing}
+          onPointerLeave={stopDrawing}
+          className={styles.canvas}
         />
         {!isTouched && <div className={styles.drawHint}>Draw a digit here</div>}
       </div>

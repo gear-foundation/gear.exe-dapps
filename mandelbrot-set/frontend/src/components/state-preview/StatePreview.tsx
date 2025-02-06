@@ -1,8 +1,8 @@
-import { Result } from "@/api/lib";
+import { PointResult } from "@/api/lib";
 import { useMemo } from "react";
 
 type Props = {
-  nodes: Result[];
+  nodes: PointResult[];
 };
 
 export const StatePreview = ({ nodes }: Props) => {

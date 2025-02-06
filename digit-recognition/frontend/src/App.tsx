@@ -3,11 +3,14 @@ import { useAccount } from "wagmi";
 
 import { WalletButton, Header, Layout } from "@/components";
 import { Recognition } from "./components/recognition/Recognition";
+import { ETH_CHAIN_ID } from "./consts";
 import styles from "./App.module.scss";
 
 function App() {
   const ethAccount = useAccount();
-  const isConnected = Boolean(ethAccount.chain);
+  const isConnected = Boolean(
+    ethAccount.chain && ethAccount.chain.id === ETH_CHAIN_ID
+  );
 
   return (
     <>

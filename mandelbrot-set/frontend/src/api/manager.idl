@@ -3,15 +3,11 @@ type FixedPoint = struct {
   scale: u32,
 };
 
-type Point = struct {
-  c_re: str,
-  c_im: str,
-};
-
-type Result = struct {
-  c_re: str,
-  c_im: str,
+type PointResult = struct {
+  c_re: i128,
+  c_im: i128,
   iter: u32,
+  checked: bool,
 };
 
 constructor {
@@ -20,15 +16,14 @@ constructor {
 
 service Manager {
   AddCheckers : (checkers: vec actor_id) -> null;
-  CheckPointsSet : (max_iter: u32, batch_size: u32) -> null;
-  GenerateAndStorePoints : (width: u32, height: u32, x_min: FixedPoint, x_max: FixedPoint, y_min: FixedPoint, y_max: FixedPoint, points_per_call: u32) -> null;
+  CheckPointsSet : (max_iter: u32, batch_size: u32, continue_checking: bool) -> null;
+  GenerateAndStorePoints : (width: u32, height: u32, x_min: FixedPoint, x_max: FixedPoint, y_min: FixedPoint, y_max: FixedPoint, points_per_call: u32, continue_generation: bool, check_points_after_generation: bool, max_iter: u32, batch_size: u32) -> null;
   Restart : () -> null;
-  ResultCalculated : (points: vec Point, results: vec u32) -> null;
+  ResultCalculated : (indexes: vec u32, results: vec u32) -> null;
   SendNextBatch : (checker: actor_id, max_iter: u32, batch_size: u32) -> null;
   query GetCheckers : () -> vec actor_id;
-  query GetPoints : () -> vec Point;
   query GetPointsLen : () -> u32;
-  query GetResults : (start_index: u32, end_index: u32) -> vec Result;
+  query GetResults : (start_index: u32, end_index: u32) -> vec PointResult;
   query PointsSent : () -> u32;
 };
 
