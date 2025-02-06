@@ -75,10 +75,10 @@ jobs:
           push: true
           build-args: |
             NODE_ENV=${{ env.NODE_ENV }}
-            VITE_WALLET_CONNECT_PROJECT_ID=${{ env.VITE_WALLET_CONNECT_PROJECT_ID }}
-            VITE_GEAR_API_NODE=${{ env.VITE_GEAR_API_NODE }}
-            VITE_ETH_NODE_ADDRESS=${{ env.VITE_ETH_NODE_ADDRESS }}
-            VITE_CONTRACT_ADDRESS=${{ env.VITE_CONTRACT_ADDRESS }}
+            VITE_WALLET_CONNECT_PROJECT_ID=${{ secrets.VITE_WALLET_CONNECT_PROJECT_ID_DIGIT_RECOGNITION }}
+            VITE_GEAR_API_NODE=${{ secrets.VITE_GEAR_API_NODE }}
+            VITE_ETH_NODE_ADDRESS=${{ secrets.VITE_ETH_NODE_ADDRESS }}
+            VITE_CONTRACT_ADDRESS_DIGIT_RECOGNITION=${{ secrets.VITE_CONTRACT_ADDRESS_DIGIT_RECOGNITION }}
           tags: ${{ needs.prepair.outputs.image_name }}
 
   deploy-to-k8s:

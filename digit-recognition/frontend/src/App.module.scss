@@ -1,0 +1,9 @@
+.connectionWrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  padding-top: 0;
+  min-height: calc(100vh - 78px);
+}
