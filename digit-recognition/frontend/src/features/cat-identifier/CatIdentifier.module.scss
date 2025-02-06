@@ -1,0 +1,22 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.06);
+  background-image: url("../../assets/cats.png");
+}
+
+.headerButton {
+  width: 104px;
+  padding: 0;
+  text-wrap: nowrap;
+}
+
+.footerButton {
+  width: 100%;
+}
+
+.result {
+  font-weight: 700;
+}

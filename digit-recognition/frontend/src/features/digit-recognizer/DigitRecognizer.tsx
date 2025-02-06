@@ -1,14 +1,12 @@
 import { Button, Card } from "@/components";
 import { DigitCanvas } from "./DigitCanvas";
 import { useRef, useState } from "react";
-import {
-  findMaxIndex,
-  getFlattenedPixelArray,
-  getFloatingPoint,
-} from "./utils";
+import { findMaxIndex, getFlattenedPixelArray } from "./utils";
 import { useDigitRecognitionPredict } from "./api/useDigitRecognitionPredict";
 import { useReadRpcState } from "./api/readRpcState";
 import styles from "./DigitRecognizer.module.scss";
+import { getFloatingPoint } from "@/lib/utils";
+import { DIGIT_RECOGNITION_CONTRACT_ADDRESS } from "@/consts";
 
 export const DigitRecognizer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -65,6 +63,7 @@ export const DigitRecognizer = () => {
   return (
     <Card
       title="Digit recognizer"
+      address={DIGIT_RECOGNITION_CONTRACT_ADDRESS}
       description={
         predictedDigit === null
           ? "Use the dotted canvas to draw any number from 0 to 9. Submit your drawing and let the AI recognize your handwritten digit instantly."

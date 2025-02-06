@@ -2,7 +2,7 @@
   padding: 16px 16px 28px 16px;
   border: 1px solid #ffffff29;
   width: 437px;
-  height: 536px;
+  height: 552px;
   max-width: 100%;
 }
 
@@ -57,12 +57,17 @@
   }
 }
 
-.description {
+.address {
   margin-top: 30px;
+}
+
+.description {
+  margin-top: 16px;
   font-size: 12px;
   min-height: 54px;
+  padding-right: 12px;
 }
 
 .footer {
-  margin-top: 42px;
+  margin-top: 24px;
 }

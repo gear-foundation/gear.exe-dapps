@@ -1,5 +1,3 @@
-import { FixedPoint } from "./types";
-
 const expectedSize = 28;
 
 export const getFlattenedPixelArray = (
@@ -34,10 +32,6 @@ export const getFlattenedPixelArray = (
   }
 
   return grayscaleArray; // Array of 784 elements
-};
-
-export const getFloatingPoint = ({ num, scale }: FixedPoint) => {
-  return Number(Number(num) / Math.pow(10, Number(scale)));
 };
 
 export const findMaxIndex = (numbers: number[]): number | null => {

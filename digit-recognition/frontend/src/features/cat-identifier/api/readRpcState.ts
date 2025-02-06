@@ -3,16 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { useReadContract, useWatchContractEvent } from "wagmi";
 
 import { HexString } from "@/lib/types";
-import { digitRecognitionAbi } from "./DigitRecognitionAbi";
-import { DIGIT_RECOGNITION_CONTRACT_ADDRESS, GEAR_API_NODE } from "@/consts";
-import { Result } from "../types";
+import { catDogIdentifierAbi } from "./catDogIdentifierAbi";
+import { CAT_IDENTIFIER_CONTRACT_ADDRESS, GEAR_API_NODE } from "@/consts";
+import { CalcResult } from "../types";
 import { mirrorAbi } from "./mirrorAbi";
 
 export const readRpcState = async (mirrorId?: HexString) => {
   if (!mirrorId) return;
 
   const types: Record<string, any> = {
-    FixedPoint: { num: "i64", scale: "u32" },
+    FixedPoint: { num: "i128", scale: "u32" },
+    CalcResult: {
+      probability: "FixedPoint",
+      calculated: "bool",
+    },
   };
 
   const registry = new TypeRegistry();
@@ -20,7 +24,7 @@ export const readRpcState = async (mirrorId?: HexString) => {
   registry.register(types);
 
   const payload = registry
-    .createType("(String, String)", ["DigitRecognition", "Result"])
+    .createType("(String, String)", ["CnnCatsDogs", "GetProbability"])
     .toHex();
 
   const params = {
@@ -49,24 +53,24 @@ export const readRpcState = async (mirrorId?: HexString) => {
   const json = await response.json();
 
   const result = registry.createType(
-    "(String, String, Vec<FixedPoint>)",
+    "(String, String, CalcResult)",
     json.result.payload
   );
 
-  let data = result[2].toJSON() as unknown as Result;
+  let data = result[2].toJSON() as unknown as CalcResult;
 
   return data;
 };
 
 type Params = {
-  isSubmiting: boolean;
+  isSubmiting?: boolean;
   onSuccess: () => void;
 };
 
 export const useReadRpcState = ({ isSubmiting, onSuccess }: Params) => {
   const { data: mirrorId } = useReadContract({
-    abi: digitRecognitionAbi,
-    address: DIGIT_RECOGNITION_CONTRACT_ADDRESS,
+    abi: catDogIdentifierAbi,
+    address: CAT_IDENTIFIER_CONTRACT_ADDRESS,
     functionName: "mirror",
   });
 
@@ -76,27 +80,6 @@ export const useReadRpcState = ({ isSubmiting, onSuccess }: Params) => {
     enabled: !!mirrorId,
   });
 
-  const retryWhileDataChanged = () =>
-    new Promise<void>((resolve) => {
-      const prevData = JSON.stringify(data);
-
-      const retry = async (atempt = 0) => {
-        const response = await refetch();
-        const isSameData = JSON.stringify(response.data) === prevData;
-
-        if (isSameData) {
-          setTimeout(() => {
-            retry(atempt + 1);
-          }, 1000);
-        } else {
-          console.log("resolved on atempt", atempt);
-          resolve();
-        }
-      };
-
-      retry();
-    });
-
   useWatchContractEvent({
     abi: mirrorAbi,
     eventName: "StateChanged",
@@ -104,7 +87,8 @@ export const useReadRpcState = ({ isSubmiting, onSuccess }: Params) => {
     onLogs() {
       if (isSubmiting) {
         console.log("success reply");
-        retryWhileDataChanged().then(() => onSuccess());
+        onSuccess();
+        refetch();
       }
     },
     enabled: !!mirrorId,

@@ -1,3 +1,4 @@
+import { FixedPoint } from "../types";
 export { isMobileDevice, isMobile } from "./device-detection";
 
 export const copyToClipboard = async ({
@@ -33,4 +34,8 @@ export const copyToClipboard = async ({
   } else {
     unsecuredCopyToClipboard(value);
   }
+};
+
+export const getFloatingPoint = ({ num, scale }: FixedPoint) => {
+  return Number(Number(num) / Math.pow(10, Number(scale)));
 };

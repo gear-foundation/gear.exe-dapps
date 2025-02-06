@@ -19,7 +19,6 @@
   &.btn--variant-default {
     background-color: var(--foreground);
     color: var(--background);
-    padding: 15px 23px;
 
     &:not([aria-disabled="true"]):active {
       background-color: var(--foreground-50);
@@ -36,7 +35,6 @@
     background-color: var(--background);
     color: var(--foreground);
     border: 1px solid var(--border);
-    padding: 15px 23px;
 
     &:not([aria-disabled="true"]):active {
       color: var(--foreground-50);
@@ -54,7 +52,7 @@
     border-radius: 0;
     padding: 0;
     justify-content: flex-start;
-    cursor: auto;
+    background: transparent;
   }
 
   &.btn--variant-icon {
@@ -111,7 +109,8 @@
 .size-xs {
   height: 26px;
   border-radius: 2px;
-  padding: 4px 16px;
+  padding: 4px 12px;
+  font-weight: 400;
 }
 
 .size-icon {

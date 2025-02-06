@@ -1,11 +1,13 @@
 import { clsx } from "clsx";
 import styles from "./Card.module.scss";
+import { HashLink } from "../hashLink/HashLink";
 
 type Props = {
   title: string;
+  address?: string;
   headerSlot?: React.ReactNode;
   canvasSlot?: React.ReactNode;
-  description?: string;
+  description?: React.ReactNode;
   footer?: React.ReactNode;
 };
 
@@ -13,6 +15,7 @@ export const Card = ({
   title,
   headerSlot,
   canvasSlot,
+  address,
   description,
   footer,
 }: Props) => {
@@ -31,6 +34,14 @@ export const Card = ({
         {canvasSlot}
       </div>
 
+      <div className={styles.address}>
+        {address && (
+          <HashLink
+            hash={address}
+            href={`https://holesky.etherscan.io/address/${address}`}
+          />
+        )}
+      </div>
       <div className={styles.description}>{description}</div>
       <div className={styles.footer}>{footer}</div>
     </div>
