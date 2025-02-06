@@ -1,5 +1,5 @@
-import { HexString } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
+import { HexString } from "@/lib/types";
 import { useReadContract, useWriteContract } from "wagmi";
 import { catDogIdentifierAbi } from "./catDogIdentifierAbi";
 import { CAT_IDENTIFIER_CONTRACT_ADDRESS } from "@/consts";

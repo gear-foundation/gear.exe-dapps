@@ -1,8 +1,8 @@
-import { HexString } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
 import { useQuery } from "@tanstack/react-query";
 import { useReadContract, useWatchContractEvent } from "wagmi";
 
+import { HexString } from "@/lib/types";
 import { digitRecognitionAbi } from "./DigitRecognitionAbi";
 import { DIGIT_RECOGNITION_CONTRACT_ADDRESS, GEAR_API_NODE } from "@/consts";
 import { Result } from "../types";
