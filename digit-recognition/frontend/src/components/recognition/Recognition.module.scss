@@ -13,3 +13,9 @@
   justify-content: space-between;
   gap: 32px;
 }
+
+@media (max-width: 768px) {
+  .list {
+    flex-direction: column;
+  }
+}
