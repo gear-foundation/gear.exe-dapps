@@ -12,7 +12,7 @@ export const readRpcState = async (mirrorId?: HexString) => {
   if (!mirrorId) return;
 
   const types: Record<string, any> = {
-    FixedPoint: { num: "i64", scale: "u32" },
+    FixedPoint: { num: "i128", scale: "u32" },
   };
 
   const registry = new TypeRegistry();

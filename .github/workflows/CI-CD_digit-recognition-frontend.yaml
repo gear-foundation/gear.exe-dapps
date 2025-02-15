@@ -80,6 +80,7 @@ jobs:
             VITE_ETH_NODE_ADDRESS=${{ secrets.VITE_ETH_NODE_ADDRESS }}
             VITE_CONTRACT_ADDRESS_DIGIT_RECOGNITION=${{ secrets.VITE_CONTRACT_ADDRESS_DIGIT_RECOGNITION }}
             VITE_CONTRACT_ADDRESS_CAT_IDENTIFIER=${{ secrets.VITE_CONTRACT_ADDRESS_CAT_IDENTIFIER }}
+            VITE_PROBABILITY_EDGE_CAT_IDENTIFIER=${{ secrets.VITE_PROBABILITY_EDGE_CAT_IDENTIFIER }}
           tags: ${{ needs.prepair.outputs.image_name }}
 
   deploy-to-k8s:

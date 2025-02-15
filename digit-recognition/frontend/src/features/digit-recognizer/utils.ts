@@ -28,7 +28,7 @@ export const getFlattenedPixelArray = (
     const b = pixels[i + 2];
     const brightness = Math.round((r + g + b) / 3);
 
-    grayscaleArray.push(brightness > 0 ? 255 : 0);
+    grayscaleArray.push(brightness > 128 ? 255 : 0);
   }
 
   return grayscaleArray; // Array of 784 elements

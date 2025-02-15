@@ -1,9 +1,53 @@
 export const digitRecognitionAbi = [
   {
     type: "function",
+    name: "fnDigitRecognitionConv",
+    inputs: [
+      { name: "start_col", type: "uint16", internalType: "uint16" },
+      { name: "batch_size", type: "uint16", internalType: "uint16" },
+      { name: "continue_execution", type: "bool", internalType: "bool" },
+      { name: "_value", type: "uint128", internalType: "uint128" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "fnDigitRecognitionConvert2DTo3D",
+    inputs: [{ name: "_value", type: "uint128", internalType: "uint128" }],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "fnDigitRecognitionFlatten",
+    inputs: [{ name: "_value", type: "uint128", internalType: "uint128" }],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "fnDigitRecognitionForward",
+    inputs: [
+      { name: "continue_execution", type: "bool", internalType: "bool" },
+      { name: "_value", type: "uint128", internalType: "uint128" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "fnDigitRecognitionIm2Col",
+    inputs: [{ name: "_value", type: "uint128", internalType: "uint128" }],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
     name: "fnDigitRecognitionPredict",
     inputs: [
       { name: "pixels", type: "uint8[]", internalType: "uint8[]" },
+      { name: "continue_execution", type: "bool", internalType: "bool" },
       { name: "_value", type: "uint128", internalType: "uint128" },
     ],
     outputs: [],
@@ -11,26 +55,14 @@ export const digitRecognitionAbi = [
   },
   {
     type: "function",
-    name: "fnDigitRecognitionSetConv1Weights",
+    name: "fnDigitRecognitionSetConvLayerBias",
     inputs: [
-      {
-        name: "weights",
-        type: "tuple[]",
-        internalType: "struct IDigitRecognition.FixedPoint[]",
-        components: [
-          { name: "num", type: "int64", internalType: "int64" },
-          { name: "scale", type: "uint32", internalType: "uint32" },
-        ],
-      },
-      {
-        name: "bias",
-        type: "tuple[]",
-        internalType: "struct IDigitRecognition.FixedPoint[]",
-        components: [
-          { name: "num", type: "int64", internalType: "int64" },
-          { name: "scale", type: "uint32", internalType: "uint32" },
-        ],
-      },
+      { name: "layer", type: "uint8", internalType: "uint8" },
+      { name: "bias", type: "int64[]", internalType: "int64[]" },
+      { name: "gamma", type: "int64[]", internalType: "int64[]" },
+      { name: "beta", type: "int64[]", internalType: "int64[]" },
+      { name: "mean", type: "int64[]", internalType: "int64[]" },
+      { name: "variance", type: "int64[]", internalType: "int64[]" },
       { name: "_value", type: "uint128", internalType: "uint128" },
     ],
     outputs: [],
@@ -38,26 +70,11 @@ export const digitRecognitionAbi = [
   },
   {
     type: "function",
-    name: "fnDigitRecognitionSetConv2Weights",
+    name: "fnDigitRecognitionSetConvLayerWeights",
     inputs: [
-      {
-        name: "weights",
-        type: "tuple[]",
-        internalType: "struct IDigitRecognition.FixedPoint[]",
-        components: [
-          { name: "num", type: "int64", internalType: "int64" },
-          { name: "scale", type: "uint32", internalType: "uint32" },
-        ],
-      },
-      {
-        name: "bias",
-        type: "tuple[]",
-        internalType: "struct IDigitRecognition.FixedPoint[]",
-        components: [
-          { name: "num", type: "int64", internalType: "int64" },
-          { name: "scale", type: "uint32", internalType: "uint32" },
-        ],
-      },
+      { name: "layer", type: "uint8", internalType: "uint8" },
+      { name: "filters", type: "int64[][]", internalType: "int64[][]" },
+      { name: "row_start", type: "uint16", internalType: "uint16" },
       { name: "_value", type: "uint128", internalType: "uint128" },
     ],
     outputs: [],
@@ -65,26 +82,10 @@ export const digitRecognitionAbi = [
   },
   {
     type: "function",
-    name: "fnDigitRecognitionSetFc1Weights",
+    name: "fnDigitRecognitionSetFcLayerBias",
     inputs: [
-      {
-        name: "weights",
-        type: "tuple[]",
-        internalType: "struct IDigitRecognition.FixedPoint[]",
-        components: [
-          { name: "num", type: "int64", internalType: "int64" },
-          { name: "scale", type: "uint32", internalType: "uint32" },
-        ],
-      },
-      {
-        name: "bias",
-        type: "tuple[]",
-        internalType: "struct IDigitRecognition.FixedPoint[]",
-        components: [
-          { name: "num", type: "int64", internalType: "int64" },
-          { name: "scale", type: "uint32", internalType: "uint32" },
-        ],
-      },
+      { name: "layer", type: "uint8", internalType: "uint8" },
+      { name: "bias", type: "int64[]", internalType: "int64[]" },
       { name: "_value", type: "uint128", internalType: "uint128" },
     ],
     outputs: [],
@@ -92,26 +93,11 @@ export const digitRecognitionAbi = [
   },
   {
     type: "function",
-    name: "fnDigitRecognitionSetFc2Weights",
+    name: "fnDigitRecognitionSetFcLayerWeights",
     inputs: [
-      {
-        name: "weights",
-        type: "tuple[]",
-        internalType: "struct IDigitRecognition.FixedPoint[]",
-        components: [
-          { name: "num", type: "int64", internalType: "int64" },
-          { name: "scale", type: "uint32", internalType: "uint32" },
-        ],
-      },
-      {
-        name: "bias",
-        type: "tuple[]",
-        internalType: "struct IDigitRecognition.FixedPoint[]",
-        components: [
-          { name: "num", type: "int64", internalType: "int64" },
-          { name: "scale", type: "uint32", internalType: "uint32" },
-        ],
-      },
+      { name: "layer", type: "uint8", internalType: "uint8" },
+      { name: "filters", type: "int64[][]", internalType: "int64[][]" },
+      { name: "row_start", type: "uint16", internalType: "uint16" },
       { name: "_value", type: "uint128", internalType: "uint128" },
     ],
     outputs: [],
@@ -168,6 +154,166 @@ export const digitRecognitionAbi = [
   },
   {
     type: "event",
+    name: "DigitRecognitionConvReply",
+    inputs: [
+      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
+      {
+        name: "_destination",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "_value",
+        type: "uint128",
+        indexed: false,
+        internalType: "uint128",
+      },
+      {
+        name: "_replyTo",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "_replyCode",
+        type: "bytes4",
+        indexed: false,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "DigitRecognitionConvert2DTo3DReply",
+    inputs: [
+      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
+      {
+        name: "_destination",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "_value",
+        type: "uint128",
+        indexed: false,
+        internalType: "uint128",
+      },
+      {
+        name: "_replyTo",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "_replyCode",
+        type: "bytes4",
+        indexed: false,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "DigitRecognitionFlattenReply",
+    inputs: [
+      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
+      {
+        name: "_destination",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "_value",
+        type: "uint128",
+        indexed: false,
+        internalType: "uint128",
+      },
+      {
+        name: "_replyTo",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "_replyCode",
+        type: "bytes4",
+        indexed: false,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "DigitRecognitionForwardReply",
+    inputs: [
+      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
+      {
+        name: "_destination",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "_value",
+        type: "uint128",
+        indexed: false,
+        internalType: "uint128",
+      },
+      {
+        name: "_replyTo",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "_replyCode",
+        type: "bytes4",
+        indexed: false,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "DigitRecognitionIm2ColReply",
+    inputs: [
+      { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
+      {
+        name: "_destination",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "_value",
+        type: "uint128",
+        indexed: false,
+        internalType: "uint128",
+      },
+      {
+        name: "_replyTo",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "_replyCode",
+        type: "bytes4",
+        indexed: false,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
     name: "DigitRecognitionPredictReply",
     inputs: [
       { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
@@ -200,7 +346,7 @@ export const digitRecognitionAbi = [
   },
   {
     type: "event",
-    name: "DigitRecognitionSetConv1WeightsReply",
+    name: "DigitRecognitionSetConvLayerBiasReply",
     inputs: [
       { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
       {
@@ -232,7 +378,7 @@ export const digitRecognitionAbi = [
   },
   {
     type: "event",
-    name: "DigitRecognitionSetConv2WeightsReply",
+    name: "DigitRecognitionSetConvLayerWeightsReply",
     inputs: [
       { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
       {
@@ -264,7 +410,7 @@ export const digitRecognitionAbi = [
   },
   {
     type: "event",
-    name: "DigitRecognitionSetFc1WeightsReply",
+    name: "DigitRecognitionSetFcLayerBiasReply",
     inputs: [
       { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
       {
@@ -296,7 +442,7 @@ export const digitRecognitionAbi = [
   },
   {
     type: "event",
-    name: "DigitRecognitionSetFc2WeightsReply",
+    name: "DigitRecognitionSetFcLayerWeightsReply",
     inputs: [
       { name: "payload", type: "bytes", indexed: false, internalType: "bytes" },
       {
