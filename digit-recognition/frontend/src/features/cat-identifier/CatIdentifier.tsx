@@ -4,10 +4,15 @@ import { handleImageToPixels } from "./utils";
 import { useReadRpcState } from "./api/readRpcState";
 import { getFloatingPoint } from "@/lib/utils";
 import { useCatsPredictPredict } from "./api/useCatsPredictPredict";
-import { PROBABILITY_EDGE } from "./consts";
+import { PROBABILITY_EDGE_CAT_IDENTIFIER } from "@/consts";
 import styles from "./CatIdentifier.module.scss";
 
 export const CatIdentifier = () => {
+  console.log(
+    "PROBABILITY_EDGE_CAT_IDENTIFIER:",
+    PROBABILITY_EDGE_CAT_IDENTIFIER
+  );
+
   const [image, setImage] = useState<string | null>(null);
   const [isSubmited, setIsSubmited] = useState(false);
   const [isSubmiting, setIsSubmiting] = useState(false);
@@ -42,7 +47,9 @@ export const CatIdentifier = () => {
       <div>
         Cat in the image:{" "}
         <span className={styles.result}>
-          {probability < PROBABILITY_EDGE ? "recognized" : "not recognized  "}
+          {probability <= PROBABILITY_EDGE_CAT_IDENTIFIER
+            ? "recognized"
+            : "not recognized  "}
         </span>{" "}
         (confidence score {((1 - probability) * 100).toFixed(2)}%).
       </div>
