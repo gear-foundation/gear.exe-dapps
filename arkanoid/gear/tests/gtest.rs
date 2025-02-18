@@ -50,49 +50,16 @@ async fn simulate_game() {
         .await
         .unwrap();
 
-    // service_client
-    //     .simulate_game(steps)
-    //     .send_recv(program_id)
-    //     .await
-    //     .unwrap();
-
-    let mut game_steps = Vec::new();
-    for i in 0..steps {
-        let event = events.next().await.unwrap();
-        match event.1 {
-            VaraArkanoidEvents::GameStep {
-                ball,
-                paddle,
-                block_hits,
-            } => {
-                game_steps.push(GameStep {
-                    ball_x: ball.x as f32,
-                    ball_y: ball.y as f32,
-                    ball_velocity_x: ball.velocity_x as f32,
-                    ball_velocity_y: ball.velocity_y as f32,
-                    paddle_x: paddle.x as f32,
-                    paddle_y: paddle.y as f32,
-                    block_hits: block_hits
-                        .iter()
-                        .map(|&(x, y)| (x as f32, y as f32))
-                        .collect(),
-                });
-            }
-            VaraArkanoidEvents::GameOver {
-                paddle_hits,
-                destroyed_blocks,
-            } => {
-                println!("paddle_hits {:?}", paddle_hits);
-                println!("destroyed_blocks {:?}", destroyed_blocks);
-                break;
-            }
+    let event = events.next().await.unwrap();
+    match event.1 {
+        VaraArkanoidEvents::GameOver {
+            paddle_hits,
+            destroyed_blocks,
+        } => {
+            println!("paddle_hits {:?}", paddle_hits);
+            println!("destroyed_blocks {:?}", destroyed_blocks);
         }
-    }
-
-    println!("game steps: {:?}", game_steps.len());
-    let file = File::create("/Users/luisa/vara-arkanoid/visualization/game_steps.json")
-        .expect("Unable to create file");
-    serde_json::to_writer(file, &game_steps).expect("Unable to write data to file");
+    };
 }
 #[derive(Serialize)]
 struct GameStep {
