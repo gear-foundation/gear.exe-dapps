@@ -1,6 +1,6 @@
-use sails_rs::{prelude::*};
+use sails_rs::prelude::*;
 
-use crate::Events;
+use crate::Event;
 
 pub const BLOCK_WIDTH: i16 = 40;
 pub const BLOCK_HEIGHT: i16 = 30;
@@ -170,11 +170,11 @@ impl Game {
         }
     }
 
-    pub fn update_game(&mut self) -> Events {
+    pub fn update_game(&mut self) -> Option<Event> {
         // Move the ball
         self.ball.x += self.ball.velocity_x;
         self.ball.y += self.ball.velocity_y;
-      // Move the paddle based on its direction and speed
+        // Move the paddle based on its direction and speed
         self.paddle.update_position();
 
         // Check if the ball collides with the screen edges and reverse its direction if needed
@@ -200,10 +200,10 @@ impl Game {
         // Check if the ball has missed the paddle
         if self.ball.y - self.ball.radius > SCREEN_HEIGHT {
             // Game Over condition
-            return Events::GameOver {
+            return Some(Event::GameOver {
                 paddle_hits: self.paddle_hits,
                 destroyed_blocks: self.destroyed_blocks,
-            };
+            });
         }
 
         let mut block_hits = Vec::new();
@@ -236,11 +236,7 @@ impl Game {
                 .any(|hit| hit == &(block.rect_x1, block.rect_y1))
         });
 
-        Events::GameStep {
-            ball: self.ball.clone(),
-            paddle: self.paddle.clone(),
-            block_hits,
-        }
+        None
     }
 }
 
