@@ -1,1 +1,1 @@
-target/wasm32-unknown-unknown/release/vara_arkanoid
+target/wasm32-unknown-unknown/debug/vara_arkanoid

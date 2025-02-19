@@ -141,8 +141,8 @@ pub struct Game {
     pub ball: Ball,
     blocks: Vec<Block>,
     paddle: Paddle,
-    paddle_hits: u32,
-    destroyed_blocks: u32,
+    pub paddle_hits: u32,
+    pub destroyed_blocks: u32,
 }
 
 impl Game {

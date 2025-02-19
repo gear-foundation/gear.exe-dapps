@@ -35,7 +35,7 @@ impl VaraArkanoidService {
     }
 
     pub fn init_game(&mut self) {
-
+        unsafe { GAME = Some(Game::new()) };
     }
 
     pub fn simulate_game(&mut self, num_steps: u32) {
@@ -49,6 +49,14 @@ impl VaraArkanoidService {
 
     pub fn ball_position(&self) -> Ball {
         self.get().ball.clone()
+    }
+
+    pub fn paddle_hits(&self) -> u32 {
+        self.get().paddle_hits
+    }
+
+    pub fn destroyed_blocks(&self) -> u32 {
+        self.get().destroyed_blocks
     }
 }
 
