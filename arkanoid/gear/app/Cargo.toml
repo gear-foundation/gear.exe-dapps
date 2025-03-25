@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sails-rs = { version = "0.6.1", features = ["debug", "ethexe"] }
+sails-rs = { version = "0.7.3", features = ["debug", "ethexe"] }
 rust_decimal = { version = "1.36", default-features = false }
 rust_decimal_macros = "1.36"
 parity-scale-codec = { version = "3.6", default-features = false }
