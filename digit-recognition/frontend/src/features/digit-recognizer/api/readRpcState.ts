@@ -1,4 +1,5 @@
 import { TypeRegistry } from "@polkadot/types";
+import { RegistryTypes } from "@polkadot/types/types";
 import { useQuery } from "@tanstack/react-query";
 import { useReadContract, useWatchContractEvent } from "wagmi";
 
@@ -11,7 +12,7 @@ import { mirrorAbi } from "./mirrorAbi";
 export const readRpcState = async (mirrorId?: HexString) => {
   if (!mirrorId) return;
 
-  const types: Record<string, any> = {
+  const types: RegistryTypes = {
     FixedPoint: { num: "i128", scale: "u32" },
   };
 
@@ -53,7 +54,7 @@ export const readRpcState = async (mirrorId?: HexString) => {
     json.result.payload
   );
 
-  let data = result[2].toJSON() as unknown as Result;
+  const data = result[2].toJSON() as unknown as Result;
 
   return data;
 };

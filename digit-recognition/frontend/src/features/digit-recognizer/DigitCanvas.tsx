@@ -43,7 +43,7 @@ export const DigitCanvas = ({
         ctx.imageSmoothingEnabled = true;
       }
     }
-  }, []);
+  }, [canvasRef]);
 
   const startDrawing = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;

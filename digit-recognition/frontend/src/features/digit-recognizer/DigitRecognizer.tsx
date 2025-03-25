@@ -52,7 +52,12 @@ export const DigitRecognizer = () => {
       : findMaxIndex(rpcState.map(getFloatingPoint));
 
   const predictedDigit = isSubmited ? currentState : null;
-  console.log("current state:", currentState);
+  console.log(
+    "current state:",
+    currentState,
+    rpcState?.map(getFloatingPoint),
+    rpcState
+  );
 
   const onSubmit = () => {
     setIsSubmiting(true);
