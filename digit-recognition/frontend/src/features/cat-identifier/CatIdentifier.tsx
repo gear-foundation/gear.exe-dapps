@@ -8,11 +8,6 @@ import { PROBABILITY_THRESHOLD_CAT_IDENTIFIER } from "@/consts";
 import styles from "./CatIdentifier.module.scss";
 
 export const CatIdentifier = () => {
-  console.log(
-    "PROBABILITY_THRESHOLD_CAT_IDENTIFIER:",
-    PROBABILITY_THRESHOLD_CAT_IDENTIFIER
-  );
-
   const [image, setImage] = useState<string | null>(null);
   const [isSubmited, setIsSubmited] = useState(false);
   const [isSubmiting, setIsSubmiting] = useState(false);
