@@ -30,6 +30,7 @@ export const CatIdentifier = () => {
     isSubmited && rpcState && rpcState.calculated
       ? getFloatingPoint(rpcState.probability)
       : null;
+  console.log("CatIdentifier probability:", probability);
 
   const isPending = rpcStatePending || isSubmiting;
 
@@ -42,11 +43,11 @@ export const CatIdentifier = () => {
       <div>
         Cat in the image:{" "}
         <span className={styles.result}>
-          {probability <= PROBABILITY_THRESHOLD_CAT_IDENTIFIER
+          {probability >= PROBABILITY_THRESHOLD_CAT_IDENTIFIER
             ? "recognized"
             : "not recognized"}
         </span>{" "}
-        (confidence score {((1 - probability) * 100).toFixed(2)}%).
+        (confidence score {(probability * 100).toFixed(2)}%).
       </div>
     );
   })();
