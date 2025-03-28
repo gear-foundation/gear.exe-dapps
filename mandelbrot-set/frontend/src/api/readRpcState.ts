@@ -1,5 +1,6 @@
 import { HexString } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
+import { RegistryTypes } from "@polkadot/types/types";
 import { useQuery } from "@tanstack/react-query";
 import { useReadContract } from "wagmi";
 import { PointResult } from "./lib";
@@ -16,7 +17,7 @@ export const readRpcState = async (
   if (!mirrorId) return [];
   console.log("read state from startIndex:", startIndex);
 
-  const types: Record<string, any> = {
+  const types: RegistryTypes = {
     PointResult: {
       c_re: "i128",
       c_im: "i128",
@@ -71,7 +72,7 @@ export const readRpcState = async (
   let data = result[2].toJSON() as unknown as Array<PointResult>;
 
   if (data?.length === RESPONSE_SIZE) {
-    let newData = await readRpcState(
+    const newData = await readRpcState(
       mirrorId,
       startIndex + RESPONSE_SIZE,
       endIndex + RESPONSE_SIZE

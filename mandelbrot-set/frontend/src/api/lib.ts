@@ -1,5 +1,6 @@
 import { GearApi, decodeAddress } from "@gear-js/api";
 import { TypeRegistry } from "@polkadot/types";
+import { RegistryTypes } from "@polkadot/types/types";
 import { TransactionBuilder, ActorId, ZERO_ADDRESS } from "sails-js";
 
 export interface FixedPoint {
@@ -18,8 +19,11 @@ export class Program {
   public readonly registry: TypeRegistry;
   public readonly manager: Manager;
 
-  constructor(public api: GearApi, public programId?: `0x${string}`) {
-    const types: Record<string, any> = {
+  constructor(
+    public api: GearApi,
+    public programId?: `0x${string}`
+  ) {
+    const types: RegistryTypes = {
       FixedPoint: { num: "i64", scale: "u32" },
       PointResult: { c_re: "i128", c_im: "i128", iter: "u32", checked: "bool" },
     };

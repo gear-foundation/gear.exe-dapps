@@ -1,4 +1,5 @@
 import { TypeRegistry } from "@polkadot/types";
+import { RegistryTypes } from "@polkadot/types/types";
 import { useQuery } from "@tanstack/react-query";
 import { useReadContract, useWatchContractEvent } from "wagmi";
 
@@ -7,11 +8,12 @@ import { catDogIdentifierAbi } from "./catDogIdentifierAbi";
 import { CAT_IDENTIFIER_CONTRACT_ADDRESS, GEAR_API_NODE } from "@/consts";
 import { CalcResult } from "../types";
 import { mirrorAbi } from "./mirrorAbi";
+import { retryWhileDataChanged } from "@/lib/utils";
 
 export const readRpcState = async (mirrorId?: HexString) => {
   if (!mirrorId) return;
 
-  const types: Record<string, any> = {
+  const types: RegistryTypes = {
     FixedPoint: { num: "i128", scale: "u32" },
     CalcResult: {
       probability: "FixedPoint",
@@ -57,7 +59,7 @@ export const readRpcState = async (mirrorId?: HexString) => {
     json.result.payload
   );
 
-  let data = result[2].toJSON() as unknown as CalcResult;
+  const data = result[2].toJSON() as unknown as CalcResult;
 
   return data;
 };
@@ -85,13 +87,9 @@ export const useReadRpcState = ({ isSubmiting, onSuccess }: Params) => {
     eventName: "StateChanged",
     address: mirrorId as HexString,
     onLogs() {
-      if (isSubmiting) {
-        console.log("success reply");
-        onSuccess();
-        refetch();
-      }
+      retryWhileDataChanged({ data, refetch }).then(() => onSuccess());
     },
-    enabled: !!mirrorId,
+    enabled: !!mirrorId && isSubmiting,
   });
 
   return {
