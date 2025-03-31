@@ -1,6 +1,6 @@
 import { Button, Card } from "@/components";
 import { DigitCanvas } from "./DigitCanvas";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { findMaxIndex, getFlattenedPixelArray } from "./utils";
 import { useDigitRecognitionPredict } from "./api/useDigitRecognitionPredict";
 import { useReadRpcState } from "./api/readRpcState";
@@ -52,16 +52,21 @@ export const DigitRecognizer = () => {
       : findMaxIndex(rpcState.map(getFloatingPoint));
 
   const predictedDigit = isSubmited ? currentState : null;
-  console.log(
-    "current state:",
-    currentState,
-    rpcState?.map(getFloatingPoint),
-    rpcState
-  );
+
+  useEffect(() => {
+    console.log(
+      "current state:",
+      currentState,
+      rpcState?.map(getFloatingPoint),
+      rpcState
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = () => {
     setIsSubmiting(true);
     const flattenedPixelArray = getFlattenedPixelArray(canvasRef);
+    console.log("flattenedPixelArray:", flattenedPixelArray.join(", "));
     digitRecognitionPredict(flattenedPixelArray);
   };
 

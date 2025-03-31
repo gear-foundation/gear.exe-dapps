@@ -43,7 +43,8 @@ export const DigitCanvas = ({
         ctx.imageSmoothingEnabled = true;
       }
     }
-  }, [canvasRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startDrawing = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;

@@ -28,9 +28,12 @@ export const getFlattenedPixelArray = (
       continue;
     }
 
-    const getRandomDeviation = () => Math.round(Math.random() * 10 - 5);
     const isUseDeviation = Math.random() > 0.5;
     const middleBrightness = 250;
+    const deviationRange = 5;
+    const deviationSpread = deviationRange * 2;
+    const getRandomDeviation = () =>
+      Math.round(Math.random() * deviationSpread - deviationRange);
     const noisedBrightness = isUseDeviation
       ? middleBrightness + getRandomDeviation()
       : middleBrightness;
@@ -38,7 +41,6 @@ export const getFlattenedPixelArray = (
     grayscaleArray.push(Math.min(noisedBrightness, 255));
   }
 
-  console.log("grayscaleArray:", grayscaleArray.join(", "));
   return grayscaleArray; // Array of 784 elements
 };
 
