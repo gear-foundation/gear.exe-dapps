@@ -1,4 +1,5 @@
 import { TypeRegistry } from "@polkadot/types";
+import { RegistryTypes } from "@polkadot/types/types";
 import { useQuery } from "@tanstack/react-query";
 import { useReadContract, useWatchContractEvent } from "wagmi";
 
@@ -7,12 +8,13 @@ import { digitRecognitionAbi } from "./DigitRecognitionAbi";
 import { DIGIT_RECOGNITION_CONTRACT_ADDRESS, GEAR_API_NODE } from "@/consts";
 import { Result } from "../types";
 import { mirrorAbi } from "./mirrorAbi";
+import { retryWhileDataChanged } from "@/lib/utils";
 
 export const readRpcState = async (mirrorId?: HexString) => {
   if (!mirrorId) return;
 
-  const types: Record<string, any> = {
-    FixedPoint: { num: "i64", scale: "u32" },
+  const types: RegistryTypes = {
+    FixedPoint: { num: "i128", scale: "u32" },
   };
 
   const registry = new TypeRegistry();
@@ -53,7 +55,7 @@ export const readRpcState = async (mirrorId?: HexString) => {
     json.result.payload
   );
 
-  let data = result[2].toJSON() as unknown as Result;
+  const data = result[2].toJSON() as unknown as Result;
 
   return data;
 };
@@ -76,38 +78,14 @@ export const useReadRpcState = ({ isSubmiting, onSuccess }: Params) => {
     enabled: !!mirrorId,
   });
 
-  const retryWhileDataChanged = () =>
-    new Promise<void>((resolve) => {
-      const prevData = JSON.stringify(data);
-
-      const retry = async (atempt = 0) => {
-        const response = await refetch();
-        const isSameData = JSON.stringify(response.data) === prevData;
-
-        if (isSameData) {
-          setTimeout(() => {
-            retry(atempt + 1);
-          }, 1000);
-        } else {
-          console.log("resolved on atempt", atempt);
-          resolve();
-        }
-      };
-
-      retry();
-    });
-
   useWatchContractEvent({
     abi: mirrorAbi,
     eventName: "StateChanged",
     address: mirrorId as HexString,
     onLogs() {
-      if (isSubmiting) {
-        console.log("success reply");
-        retryWhileDataChanged().then(() => onSuccess());
-      }
+      retryWhileDataChanged({ data, refetch }).then(() => onSuccess());
     },
-    enabled: !!mirrorId,
+    enabled: !!mirrorId && isSubmiting,
   });
 
   return {

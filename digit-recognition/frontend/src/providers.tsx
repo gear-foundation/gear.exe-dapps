@@ -1,6 +1,6 @@
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { PropsWithChildren } from "react";
-import { WagmiProvider, http } from "wagmi";
+import { WagmiProvider, webSocket } from "wagmi";
 import { createAppKit } from "@reown/appkit/react";
 import { AppKitNetwork } from "@reown/appkit/networks";
 import * as allNetworks from "@reown/appkit/networks";
@@ -32,7 +32,7 @@ const networks = [getNetwork(ETH_CHAIN_ID)] as [
 const wagmiAdapter = new WagmiAdapter({
   networks,
   projectId: PROJECT_ID,
-  transports: { [ETH_CHAIN_ID]: http(ETH_NODE_ADDRESS) },
+  transports: { [ETH_CHAIN_ID]: webSocket(ETH_NODE_ADDRESS) },
 });
 
 createAppKit({

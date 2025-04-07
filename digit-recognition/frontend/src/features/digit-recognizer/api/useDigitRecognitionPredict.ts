@@ -15,7 +15,7 @@ export const useDigitRecognitionPredict = ({ onError }: Params) => {
         abi: digitRecognitionAbi,
         address: DIGIT_RECOGNITION_CONTRACT_ADDRESS,
         functionName: "fnDigitRecognitionPredict",
-        args: [pixels, 0],
+        args: [pixels, true, 0],
       },
       { onError }
     );

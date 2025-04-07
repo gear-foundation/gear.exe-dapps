@@ -1,5 +1,6 @@
 import { FixedPoint } from "../types";
 export { isMobileDevice, isMobile } from "./device-detection";
+export { retryWhileDataChanged } from "./retry-while-data-changed";
 
 export const copyToClipboard = async ({
   value,

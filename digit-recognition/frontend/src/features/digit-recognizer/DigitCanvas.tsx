@@ -43,6 +43,7 @@ export const DigitCanvas = ({
         ctx.imageSmoothingEnabled = true;
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startDrawing = (e: React.MouseEvent) => {

@@ -19,16 +19,26 @@ export const getFlattenedPixelArray = (
 
   const imageData = tempCtx.getImageData(0, 0, expectedSize, expectedSize);
 
-  const pixels = imageData.data; // Array of RGBA values ​​(4 elements per pixel)
+  const pixels = imageData.data; // Array of RGBA values (4 elements per pixel)
   const grayscaleArray = [];
 
   for (let i = 0; i < pixels.length; i += 4) {
-    const r = pixels[i];
-    const g = pixels[i + 1];
-    const b = pixels[i + 2];
-    const brightness = Math.round((r + g + b) / 3);
+    if (pixels[i] === 0) {
+      grayscaleArray.push(0);
+      continue;
+    }
 
-    grayscaleArray.push(brightness > 0 ? 255 : 0);
+    const isUseDeviation = Math.random() > 0.5;
+    const middleBrightness = 250;
+    const deviationRange = 5;
+    const deviationSpread = deviationRange * 2;
+    const getRandomDeviation = () =>
+      Math.round(Math.random() * deviationSpread - deviationRange);
+    const noisedBrightness = isUseDeviation
+      ? middleBrightness + getRandomDeviation()
+      : middleBrightness;
+
+    grayscaleArray.push(Math.min(noisedBrightness, 255));
   }
 
   return grayscaleArray; // Array of 784 elements
