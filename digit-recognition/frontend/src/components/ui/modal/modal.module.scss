@@ -1,0 +1,25 @@
+.dialog {
+  padding: 16px;
+  width: 438px;
+  background-color: #000;
+  border: 1px solid #ffffff80;
+  color: #fff;
+
+  &::backdrop {
+    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  margin-bottom: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+  }
+}
