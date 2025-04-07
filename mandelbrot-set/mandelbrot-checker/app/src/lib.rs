@@ -1,7 +1,8 @@
 #![no_std]
-
+#![allow(static_mut_refs)]
 use rust_decimal::Decimal;
 use sails_rs::{gstd::msg, prelude::*};
+
 struct MandelbrotCheckerService(());
 
 #[derive(Encode, Decode, TypeInfo, Clone)]
@@ -44,8 +45,6 @@ impl MandelbrotCheckerService {
     fn check_mandelbrot(&self, c_re: Decimal, c_im: Decimal, max_iter: u32) -> u32 {
         let mut z_re = c_re;
         let mut z_im = c_im;
-
-        // Threshold
         let threshold = Decimal::from(4);
 
         for _i in 0..max_iter {
