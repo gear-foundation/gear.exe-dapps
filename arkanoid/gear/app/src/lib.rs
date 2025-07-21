@@ -3,7 +3,7 @@
 
 use sails_rs::prelude::*;
 mod game;
-use game::{Ball, Game};
+use game::Game;
 static mut GAME: Option<Game> = None;
 struct VaraArkanoidService(());
 
@@ -28,27 +28,34 @@ pub enum Event {
     },
 }
 
-#[sails_rs::service(events = Event)]
+//#[sails_rs::service(events = Event)]
+#[sails_rs::service]
+
 impl VaraArkanoidService {
     pub fn new() -> Self {
         Self(())
     }
 
-    pub fn init_game(&mut self) {
-
-    }
+    pub fn init_game(&mut self) {}
 
     pub fn simulate_game(&mut self, num_steps: u32) {
         for _i in 0..num_steps {
             let event = self.get_mut().update_game();
-            if let Some(event) = event {
-                self.notify_on(event).expect("Error in event notify");
+            if let Some(_) = event {
+                break;
             }
         }
     }
 
-    pub fn ball_position(&self) -> Ball {
-        self.get().ball.clone()
+    pub fn ball_position(&self) -> (i16, i16, i16, i16, i16) {
+        let ball = self.get().ball.clone();
+        (
+            ball.x,
+            ball.y,
+            ball.radius,
+            ball.velocity_x,
+            ball.velocity_y,
+        )
     }
 }
 
@@ -57,7 +64,7 @@ pub struct VaraArkanoidProgram(());
 #[sails_rs::program]
 impl VaraArkanoidProgram {
     // Program's constructor
-    pub fn new() -> Self {
+    pub fn create_arkanoid() -> Self {
         VaraArkanoidService::init();
         Self(())
     }

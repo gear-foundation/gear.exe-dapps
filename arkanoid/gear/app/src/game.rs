@@ -66,11 +66,11 @@ const BRICK_TEMPLATE: [[bool; 11]; 16] = [
 
 #[derive(Default, Encode, Decode, TypeInfo, Clone)]
 pub struct Ball {
-    x: i16,
-    y: i16,
-    radius: i16,
-    velocity_x: i16,
-    velocity_y: i16,
+    pub x: i16,
+    pub y: i16,
+    pub radius: i16,
+    pub velocity_x: i16,
+    pub velocity_y: i16,
 }
 
 impl Ball {
