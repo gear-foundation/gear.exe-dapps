@@ -5,12 +5,12 @@ edition = "2021"
 
 [dependencies]
 mockall = { version = "0.12", optional = true }
-sails-rs = "0.7.3"
+sails-rs = "0.8.1"
 
 [build-dependencies]
 vara-arkanoid-app = { path = "../app" }
-sails-client-gen = "0.7.3"
-sails-idl-gen = "0.7.3"
+sails-client-gen = "0.8.1"
+sails-idl-gen = "0.8.1"
 
 [features]
 mocks = ["sails-rs/mockall", "dep:mockall"]
