@@ -1,0 +1,26 @@
+[workspace]
+
+members = ["client"]
+
+
+[package]
+name = "orderbook"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+orderbook-app = { path = "app" }
+
+[build-dependencies]
+orderbook-app = { path = "app" }
+sails-rs = { version = "0.9.1", features = ["wasm-builder", "ethexe"] }
+sails-idl-gen = "0.9.1"
+
+[dev-dependencies]
+orderbook = { path = ".", features = ["wasm-binary"] }
+orderbook-client = { path = "client" }
+sails-rs = { version = "0.9.1", features = ["gtest"] }
+tokio = { version = "1.41", features = ["rt", "macros"] }
+
+[features]
+wasm-binary = []
