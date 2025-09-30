@@ -1,5 +1,5 @@
 #![allow(static_mut_refs)]
-use sails_rs::{ prelude::*, str::FromStr};
+use sails_rs::{prelude::*, str::FromStr};
 
 pub struct OrderbookService(());
 mod orderbook;
@@ -44,7 +44,6 @@ impl OrderbookService {
     }
 }
 
-
 #[sails_rs::service]
 impl OrderbookService {
     #[export]
@@ -63,18 +62,30 @@ impl OrderbookService {
         order_side: String,
         order_kind: String,
         price: [u64; 4],
-        amount: [u64; 4],
+        amount_base: [u64; 4],
+        amount_quote: [u64; 4], // for Buy Market orders, indicate zero for other orders
     ) {
         let state = self.get_mut();
         let trader = H160::from(U32x5(trader));
         let side = Side::from_str(&order_side).expect("Wrong type for side");
         let kind = OrderKind::from_str(&order_kind).expect("Wrong type for side");
         let price = U256(price);
-        let amount_base = U256(amount);
+        let amount_base = U256(amount_base);
+        let amount_quote = U256(amount_quote);
 
         let reserved_amount = match side {
             Side::Buy => {
-                let cost = OrderBook::calc_quote(amount_base, price, true);
+                let cost = if kind == OrderKind::Market {
+                    if amount_quote.is_zero() {
+                        panic!("Cant indicate zero quote amount for Buy Market order")
+                    };
+                    amount_quote
+                } else {
+                    if price.is_zero() {
+                        panic!("Price cannot be zero for this order");
+                    }
+                    OrderBook::calc_quote(amount_base, price, true)
+                };
                 if !state.ledger.reserve(trader, state.quote_token, cost) {
                     panic!("Not enough funds for Buy")
                 }
@@ -166,14 +177,9 @@ impl OrderbookService {
     }
 
     #[export]
-    pub fn cancel_order(
-        &mut self,
-        order_id: OrderId
-    ) {
+    pub fn cancel_order(&mut self, order_id: OrderId) {
         let state = self.get_mut();
-        if let Some(order) = state.orderbook.cancel_order(order_id) {
-
-        }
+        if let Some(order) = state.orderbook.cancel_order(order_id) {}
     }
 }
 

@@ -119,7 +119,7 @@ impl OrderBook {
                             break;
                         }
                         let trade_amount = remaining.min(existing.amount_base);
-                        let quote = Self::calc_quote(trade_amount, *price, true);
+                        let quote = Self::calc_quote(trade_amount, *price, false);
                         trades.push(Trade {
                             maker: existing.owner,
                             taker: order.owner,
@@ -182,11 +182,23 @@ impl OrderBook {
                             amount_base: trade_amount,
                             amount_quote: quote,
                         });
-                        order.amount_base -= trade_amount;
-                        order.reserved_amount -= quote;
+                        order.amount_base = order
+                            .amount_base
+                            .checked_sub(trade_amount)
+                            .expect("Order amount_base underflow");
+                        order.reserved_amount = order
+                            .reserved_amount
+                            .checked_sub(quote)
+                            .expect("Order reserved_amount underflow");
+                        existing.amount_base = existing
+                            .amount_base
+                            .checked_sub(trade_amount)
+                            .expect("Existing amount_base underflow");
+                        existing.reserved_amount = existing
+                            .reserved_amount
+                            .checked_sub(trade_amount)
+                            .expect("Existing reserved_amount underflow");
 
-                        existing.amount_base -= trade_amount;
-                        existing.reserved_amount -= trade_amount;
                         if !existing.amount_base.is_zero() {
                             queue.push_front(existing);
                             break;
@@ -223,11 +235,24 @@ impl OrderBook {
                             amount_base: trade_amount,
                             amount_quote: quote,
                         });
-                        order.amount_base -= trade_amount;
-                        order.reserved_amount -= trade_amount;
+                        order.amount_base = order
+                            .amount_base
+                            .checked_sub(trade_amount)
+                            .expect("Order amount_base underflow");
+                        order.reserved_amount = order
+                            .reserved_amount
+                            .checked_sub(trade_amount)
+                            .expect("Order reserved_amount underflow");
 
-                        existing.amount_base -= trade_amount;
-                        existing.reserved_amount -= quote;
+                        existing.amount_base = existing
+                            .amount_base
+                            .checked_sub(trade_amount)
+                            .expect("Existing amount_base underflow");
+                        existing.reserved_amount = existing
+                            .reserved_amount
+                            .checked_sub(quote)
+                            .expect("Existing reserved_amount underflow");
+
                         if !existing.amount_base.is_zero() {
                             queue.push_front(existing);
                             break;
@@ -345,7 +370,7 @@ mod tests {
             price: btc_price(885),     // 0.00000885 BTC per 1 USDC
             amount_base: usdc(10_000), // 10,000 USDC
             owner: ACTOR_1,
-            reserved_amount: usdc(10_000)
+            reserved_amount: usdc(10_000),
         });
 
         book.place_order(Order {
@@ -355,7 +380,7 @@ mod tests {
             price: btc_price(895),
             amount_base: usdc(15_000),
             owner: ACTOR_1,
-            reserved_amount: usdc(15_000)
+            reserved_amount: usdc(15_000),
         });
 
         book.place_order(Order {
@@ -365,7 +390,7 @@ mod tests {
             price: btc_price(890),
             amount_base: usdc(25_000),
             owner: ACTOR_1,
-            reserved_amount: usdc(25_000)
+            reserved_amount: usdc(25_000),
         });
 
         book.place_order(Order {
@@ -375,7 +400,7 @@ mod tests {
             price: btc_price(875),
             amount_base: usdc(20_000),
             owner: ACTOR_2,
-            reserved_amount: OrderBook::calc_quote(usdc(20_000), btc_price(875), true)
+            reserved_amount: OrderBook::calc_quote(usdc(20_000), btc_price(875), true),
         });
 
         book.place_order(Order {
@@ -385,7 +410,7 @@ mod tests {
             price: btc_price(870),
             amount_base: usdc(30_000),
             owner: ACTOR_2,
-            reserved_amount: OrderBook::calc_quote(usdc(30_000), btc_price(870), true)
+            reserved_amount: OrderBook::calc_quote(usdc(30_000), btc_price(870), true),
         });
 
         book
@@ -402,7 +427,7 @@ mod tests {
             price: U256::zero(), // market order (price is ignored)
             amount_base: usdc(30_000),
             owner: ACTOR_3,
-            reserved_amount: OrderBook::calc_quote(usdc(30_000), btc_price(895), true)
+            reserved_amount: OrderBook::calc_quote(usdc(30_000), btc_price(895), true),
         };
 
         let trades = book.place_order(order);
@@ -454,7 +479,7 @@ mod tests {
             price: U256::zero(),
             amount_base: usdc(40_000),
             owner: ACTOR_3,
-            reserved_amount: usdc(40_000)
+            reserved_amount: usdc(40_000),
         };
 
         let trades = book.place_order(order);
@@ -505,7 +530,7 @@ mod tests {
             price: btc_price(880),
             amount_base: usdc(15_000),
             owner: ACTOR_3,
-            reserved_amount: OrderBook::calc_quote(usdc(15_000), btc_price(880), true)
+            reserved_amount: OrderBook::calc_quote(usdc(15_000), btc_price(880), true),
         };
 
         let trades = book.place_order(order);
@@ -528,7 +553,7 @@ mod tests {
             price: btc_price(890),
             amount_base: usdc(15_000),
             owner: ACTOR_3,
-            reserved_amount: OrderBook::calc_quote(usdc(15_000), btc_price(890), true)
+            reserved_amount: OrderBook::calc_quote(usdc(15_000), btc_price(890), true),
         };
 
         let trades = book.place_order(order);
@@ -582,7 +607,7 @@ mod tests {
             price: U256::zero(),
             amount_base: small_usdc,
             owner: ACTOR_2,
-            reserved_amount: OrderBook::calc_quote(small_usdc, btc_price(890), true)
+            reserved_amount: OrderBook::calc_quote(small_usdc, btc_price(890), true),
         };
 
         let trades = book.place_order(buy_order);
@@ -609,7 +634,7 @@ mod tests {
             price: U256::zero(),
             amount_base: whale_amount,
             owner: ACTOR_3,
-            reserved_amount: OrderBook::calc_quote(whale_amount, btc_price(895), true)
+            reserved_amount: OrderBook::calc_quote(whale_amount, btc_price(895), true),
         };
 
         let trades = book.place_order(order);
