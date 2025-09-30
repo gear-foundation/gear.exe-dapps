@@ -309,9 +309,9 @@ mod tests {
     extern crate std;
     #[cfg(test)]
     use std::println;
-    const ACTOR_1: ActorId = ActorId::new([1u8; 32]);
-    const ACTOR_2: ActorId = ActorId::new([2u8; 32]);
-    const ACTOR_3: ActorId = ActorId::new([3u8; 32]);
+    const ACTOR_1: H160 = H160([1u8; 20]);
+    const ACTOR_2: H160 = H160([2u8; 20]);
+    const ACTOR_3: H160 = H160([3u8; 20]);
 
     // USDC/BTC pair: USDC - base token, BTC - quote token
     // 1 USDC = 0.0000088 BTC (BTC ~$113,636)
@@ -345,6 +345,7 @@ mod tests {
             price: btc_price(885),     // 0.00000885 BTC per 1 USDC
             amount_base: usdc(10_000), // 10,000 USDC
             owner: ACTOR_1,
+            reserved_amount: usdc(10_000)
         });
 
         book.place_order(Order {
@@ -354,6 +355,7 @@ mod tests {
             price: btc_price(895),
             amount_base: usdc(15_000),
             owner: ACTOR_1,
+            reserved_amount: usdc(15_000)
         });
 
         book.place_order(Order {
@@ -363,6 +365,7 @@ mod tests {
             price: btc_price(890),
             amount_base: usdc(25_000),
             owner: ACTOR_1,
+            reserved_amount: usdc(25_000)
         });
 
         book.place_order(Order {
@@ -372,6 +375,7 @@ mod tests {
             price: btc_price(875),
             amount_base: usdc(20_000),
             owner: ACTOR_2,
+            reserved_amount: OrderBook::calc_quote(usdc(20_000), btc_price(875), true)
         });
 
         book.place_order(Order {
@@ -381,6 +385,7 @@ mod tests {
             price: btc_price(870),
             amount_base: usdc(30_000),
             owner: ACTOR_2,
+            reserved_amount: OrderBook::calc_quote(usdc(30_000), btc_price(870), true)
         });
 
         book
@@ -397,6 +402,7 @@ mod tests {
             price: U256::zero(), // market order (price is ignored)
             amount_base: usdc(30_000),
             owner: ACTOR_3,
+            reserved_amount: OrderBook::calc_quote(usdc(30_000), btc_price(895), true)
         };
 
         let trades = book.place_order(order);
@@ -448,6 +454,7 @@ mod tests {
             price: U256::zero(),
             amount_base: usdc(40_000),
             owner: ACTOR_3,
+            reserved_amount: usdc(40_000)
         };
 
         let trades = book.place_order(order);
@@ -498,6 +505,7 @@ mod tests {
             price: btc_price(880),
             amount_base: usdc(15_000),
             owner: ACTOR_3,
+            reserved_amount: OrderBook::calc_quote(usdc(15_000), btc_price(880), true)
         };
 
         let trades = book.place_order(order);
@@ -520,6 +528,7 @@ mod tests {
             price: btc_price(890),
             amount_base: usdc(15_000),
             owner: ACTOR_3,
+            reserved_amount: OrderBook::calc_quote(usdc(15_000), btc_price(890), true)
         };
 
         let trades = book.place_order(order);
@@ -563,6 +572,7 @@ mod tests {
             price: btc_price(880),
             amount_base: small_usdc,
             owner: ACTOR_1,
+            reserved_amount: small_usdc,
         });
 
         let buy_order = Order {
@@ -572,6 +582,7 @@ mod tests {
             price: U256::zero(),
             amount_base: small_usdc,
             owner: ACTOR_2,
+            reserved_amount: OrderBook::calc_quote(small_usdc, btc_price(890), true)
         };
 
         let trades = book.place_order(buy_order);
@@ -580,7 +591,7 @@ mod tests {
         assert_eq!(trades[0].amount_base, small_usdc);
 
         // 9 satoshi
-        let expected_btc = btc("0.00000009");
+        let expected_btc = btc("0.00000008");
         assert_eq!(trades[0].amount_quote, expected_btc);
     }
 
@@ -598,6 +609,7 @@ mod tests {
             price: U256::zero(),
             amount_base: whale_amount,
             owner: ACTOR_3,
+            reserved_amount: OrderBook::calc_quote(whale_amount, btc_price(895), true)
         };
 
         let trades = book.place_order(order);
