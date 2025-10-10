@@ -38,6 +38,7 @@ const Button: React.FC<ButtonProps> = ({
       onClick={onClick}
       disabled={isDisabled}
       aria-disabled={isDisabled}
+      type="button"
     >
       {isLoading ? (
         <LoadingIcon className={styles["animate-spin"]} />

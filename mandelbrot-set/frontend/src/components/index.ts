@@ -8,4 +8,3 @@ export { WalletButton } from "./wallet/WalletButton";
 export { Button } from "./ui/Button";
 export { EncryptButton } from "./ui/EncryptButton";
 export { Input } from "./ui/Input";
-export { Modal } from "./ui/Modal";

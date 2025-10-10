@@ -1,6 +1,7 @@
 import { FixedPoint } from "../types";
 export { isMobileDevice, isMobile } from "./device-detection";
 export { retryWhileDataChanged } from "./retry-while-data-changed";
+export { getCroppedImg } from "./get-cropped-image";
 
 export const copyToClipboard = async ({
   value,
