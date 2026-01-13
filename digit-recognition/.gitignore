@@ -1,3 +1,4 @@
 target/
 .binpath
 node_modules
+cnn-cats-dogs
