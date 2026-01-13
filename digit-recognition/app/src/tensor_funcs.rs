@@ -1,5 +1,5 @@
 use crate::FixedPoint;
-use ndarray::{s, Array, Array1, Array2, Array3, Array4, ArrayBase, Axis, Data, Dimension};
+use ndarray::{s, Array, Array1, Array2, Array3, Array4, ArrayBase, Data, Dimension};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use sails_rs::prelude::*;
@@ -7,7 +7,7 @@ use sails_rs::prelude::*;
 pub fn fixed_points_to_decimal_vector(weights: &[FixedPoint]) -> Vec<Decimal> {
     weights
         .iter()
-        .map(|fp| Decimal::new(fp.num as i64, fp.scale))
+        .map(|fp| Decimal::new(fp.0 as i64, fp.1))
         .collect()
 }
 
@@ -229,7 +229,7 @@ pub fn fixed_points_to_array4(
         let d3 = (index / dim4) % dim3;
         let d4 = index % dim4;
 
-        result[[d1, d2, d3, d4]] = Decimal::new(fixed_point.num as i64, fixed_point.scale);
+        result[[d1, d2, d3, d4]] = Decimal::new(fixed_point.0 as i64, fixed_point.1);
     }
 
     result
@@ -253,7 +253,7 @@ pub fn fixed_points_to_array2(
         let row = index / cols;
         let col = index % cols;
 
-        result[[row, col]] = Decimal::new(fixed_point.num as i64, fixed_point.scale);
+        result[[row, col]] = Decimal::new(fixed_point.0 as i64, fixed_point.1);
     }
 
     result

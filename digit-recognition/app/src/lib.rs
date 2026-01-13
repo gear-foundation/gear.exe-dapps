@@ -1,10 +1,9 @@
 #![no_std]
 #![allow(static_mut_refs)]
 
-use ndarray::{Array1, Array2, Array3, Array4};
-use rust_decimal::prelude::Zero;
+use ndarray::{Array1, Array2, Array3};
 use rust_decimal::Decimal;
-use sails_rs::gstd::{exec, msg};
+use sails_rs::gstd::exec;
 use sails_rs::prelude::*;
 struct DigitRecognitionService(());
 pub mod tensor_funcs;
@@ -18,30 +17,22 @@ static mut STATE: Option<State> = None;
 pub struct State {
     conv1_weights: Array2<Decimal>,
     conv1_bias: Array1<Decimal>,
+    conv1_is_set: bool,
     conv2_weights: Array2<Decimal>,
     conv2_bias: Array1<Decimal>,
+    conv2_is_set: bool,
     fc1_weights: Array2<Decimal>,
     fc1_bias: Array1<Decimal>,
+    fc1_is_set: bool,
     fc2_weights: Array2<Decimal>,
     fc2_bias: Array1<Decimal>,
+    fc2_is_set: bool,
 
     x: Array3<Decimal>,
     result: Option<Vec<FixedPoint>>,
 }
-#[derive(Encode, Decode, TypeInfo, Clone)]
-pub struct FixedPoint {
-    pub num: i128,
-    pub scale: u32,
-}
 
-impl FixedPoint {
-    pub fn from_decimal(decimal: &Decimal) -> Self {
-        FixedPoint {
-            num: decimal.mantissa(),
-            scale: decimal.scale(),
-        }
-    }
-}
+pub type FixedPoint = (i128, u32);
 
 impl DigitRecognitionService {
     pub fn init() -> Self {
@@ -54,40 +45,49 @@ impl DigitRecognitionService {
     pub fn get(&self) -> &'static State {
         unsafe { STATE.as_ref().expect("STATE is not initialized") }
     }
+
+    pub fn create() -> Self {
+        Self(())
+    }
 }
 
 #[sails_rs::service]
 impl DigitRecognitionService {
-    pub fn new() -> Self {
-        Self(())
-    }
-
+    #[export]
     pub fn set_conv1_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
         let state = self.get_mut();
 
         state.conv1_weights =
             filter_to_matrix_from_flat(&fixed_points_to_decimal_vector(&weights), 8, 1, 5, 5);
-        state.conv1_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+        state.conv1_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.0 as i64, fp.1));
+        state.conv1_is_set = true;
     }
 
+    #[export]
     pub fn set_conv2_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
         let state = self.get_mut();
         state.conv2_weights =
             filter_to_matrix_from_flat(&fixed_points_to_decimal_vector(&weights), 8, 8, 5, 5);
 
-        state.conv2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+        state.conv2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.0 as i64, fp.1));
+        state.conv2_is_set = true;
     }
 
-    pub fn set_fc1_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
+    #[export]
+    pub fn set_fc1_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) -> bool {
         let state = self.get_mut();
         state.fc1_weights = fixed_points_to_array2(weights, (64, 128));
-        state.fc1_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+        state.fc1_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.0 as i64, fp.1));
+        state.fc1_is_set = true;
+        true
     }
 
+    #[export]
     pub fn set_fc2_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
         let state = self.get_mut();
         state.fc2_weights = fixed_points_to_array2(weights, (10, 64));
-        state.fc2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+        state.fc2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.0 as i64, fp.1));
+        state.fc2_is_set = true;
     }
 
     /// Converts raw pixels into a 3D tensor
@@ -103,8 +103,6 @@ impl DigitRecognitionService {
             GREYSCALE_SIZE
         );
 
-        let gr_size = Decimal::new(GREYSCALE_SIZE as i64, 0);
-
         let mut input = Array3::<Decimal>::zeros((1, 28, 28));
         let gr_size = Decimal::new(GREYSCALE_SIZE as i64, 0);
 
@@ -118,6 +116,7 @@ impl DigitRecognitionService {
     }
 
     /// Applies the first convolutional layer
+    #[export]
     pub fn predict(&mut self, pixels: Vec<u16>) {
         let input = Self::prepare_input(&pixels);
         let state = self.get_mut();
@@ -155,37 +154,38 @@ impl DigitRecognitionService {
         state.result = Some(
             probabilities
                 .into_iter()
-                .map(|dec| FixedPoint::from_decimal(&dec))
+                .map(|dec| (dec.mantissa() as i128, dec.scale()))
                 .collect(),
         );
-
     }
 
+    #[export]
     pub fn result(&self) -> Vec<FixedPoint> {
         self.get().result.clone().unwrap_or_default()
     }
-}
 
-fn relu(input: &Array3<Decimal>) -> Array3<Decimal> {
-    input.mapv(|x| {
-        if x > Decimal::zero() {
-            x
-        } else {
-            Decimal::zero()
-        }
-    })
+    #[export]
+    pub fn layers_set(&self) -> (bool, bool, bool, bool) {
+        let state = self.get();
+        (
+            state.conv1_is_set,
+            state.conv2_is_set,
+            state.fc1_is_set,
+            state.fc2_is_set,
+        )
+    }
 }
 
 pub struct DigitRecognitionProgram(());
 
 #[sails_rs::program]
 impl DigitRecognitionProgram {
-    pub fn new() -> Self {
+    pub fn init() -> Self {
         DigitRecognitionService::init();
         Self(())
     }
 
     pub fn digit_recognition(&self) -> DigitRecognitionService {
-        DigitRecognitionService::new()
+        DigitRecognitionService::create()
     }
 }

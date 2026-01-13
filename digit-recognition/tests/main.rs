@@ -1,19 +1,20 @@
-use digit_recognition_client::{traits::*, FixedPoint};
+//use digit_recognition_client::{traits::*, FixedPoint};
 use eframe::egui;
 use eframe::App;
 use image::{imageops::FilterType, DynamicImage, ImageBuffer};
 use rust_decimal::Decimal;
+use sails_rs::gtest::constants::{DEFAULT_USERS_INITIAL_BALANCE, DEFAULT_USER_ALICE};
 use sails_rs::Encode;
-use sails_rs::{
-    calls::*,
-    gtest::{calls::*, System},
-};
+use sails_rs::{client::*, gtest::*};
 use std::sync::{Arc, Mutex};
 pub mod weights_and_biases;
+use digit_recognition_client::{
+    digit_recognition::*, DigitRecognition as DigitRecognitionClient, DigitRecognitionCtors,
+};
 use ndarray::Array1;
 use weights_and_biases::*;
 
-const ACTOR_ID: u64 = 42;
+pub type FixedPoint = (i128, u32);
 
 fn downscale_canvas(
     canvas: &[u8],
@@ -56,32 +57,31 @@ async fn async_main() {
 
     let pixels = pixels.lock().unwrap().clone();
 
+    println!("pixels {:?}", pixels);
     let system = System::new();
-    system.init_logger();
-    system.mint_to(ACTOR_ID, 100_000_000_000_000);
+    system.init_logger_with_default_filter("gwasm=debug");
+    system.mint_to(DEFAULT_USER_ALICE, DEFAULT_USERS_INITIAL_BALANCE);
+    let program_code_id = system.submit_code(digit_recognition::WASM_BINARY);
 
-    let remoting = GTestRemoting::new(system, ACTOR_ID.into());
-    remoting.system().init_logger();
+    let env = GtestEnv::new(system, DEFAULT_USER_ALICE.into());
 
-    let program_code_id = remoting
-        .system()
-        .submit_code(digit_recognition::WASM_BINARY);
-
-    let program_factory = digit_recognition_client::DigitRecognitionFactory::new(remoting.clone());
-
-    let program_id = program_factory
-        .new()
-        .send_recv(program_code_id, b"salt")
+    let program = env
+        .deploy::<digit_recognition_client::DigitRecognitionProgram>(
+            program_code_id,
+            b"salt".to_vec(),
+        )
+        .init()
         .await
         .unwrap();
 
-    let mut service_client = digit_recognition_client::DigitRecognition::new(remoting.clone());
+    let mut service_client =
+        program.digit_recognition();
 
     let conv1_weight = array4_to_fixed_points(CONV1_WEIGHT);
-    let conv1_bias = Array1::from(CONV1_BIAS.to_vec()).mapv(|value| FixedPoint {
-        num: value.mantissa(),
-        scale: value.scale(),
-    });
+    let conv1_bias = Array1::from(CONV1_BIAS.to_vec()).mapv(|value| (
+        value.mantissa(),
+         value.scale(),
+    ));
 
     let payload = [
         "DigitRecognition".encode(),
@@ -92,51 +92,77 @@ async fn async_main() {
     println!("CONV1 PAYLOAD {:?}", hex::encode(payload));
     service_client
         .set_conv_1_weights(conv1_weight, conv1_bias.to_vec())
-        .send_recv(program_id)
         .await
         .unwrap();
 
+
     let conv2_weight = array4_to_fixed_points(CONV2_WEIGHT);
-    let conv2_bias = Array1::from(CONV2_BIAS.to_vec()).mapv(|value| FixedPoint {
-        num: value.mantissa(),
-        scale: value.scale(),
-    });
+    let conv2_bias = Array1::from(CONV2_BIAS.to_vec()).mapv(|value| (
+        value.mantissa(),
+        value.scale()
+    ));
+
+    let payload = [
+        "DigitRecognition".encode(),
+        "SetConv2Weights".encode(),
+        (conv2_weight.clone(), conv2_bias.clone().to_vec()).encode(),
+    ]
+    .concat();
+    println!("CONV2 PAYLOAD {:?}", hex::encode(payload));
+
     service_client
         .set_conv_2_weights(conv2_weight, conv2_bias.to_vec())
-        .send_recv(program_id)
         .await
         .unwrap();
 
     let fc1_weight = array2_to_fixed_points(FC1_WEIGHT);
-    let fc1_bias = Array1::from(FC1_BIAS.to_vec()).mapv(|value| FixedPoint {
-        num: value.mantissa(),
-        scale: value.scale(),
-    });
+    let fc1_bias = Array1::from(FC1_BIAS.to_vec()).mapv(|value| (
+        value.mantissa(),
+        value.scale(),
+    ));
+
+    let payload = [
+        "DigitRecognition".encode(),
+        "SetFc1Weights".encode(),
+        (fc1_weight.clone(), fc1_bias.clone().to_vec()).encode(),
+    ]
+    .concat();
+  // println!("FC1 PAYLOAD {:?}", hex::encode(payload));
     service_client
         .set_fc_1_weights(fc1_weight, fc1_bias.to_vec())
-        .send_recv(program_id)
         .await
         .unwrap();
 
     let fc2_weight = array2_to_fixed_points(FC2_WEIGHT);
-    let fc2_bias = Array1::from(FC2_BIAS.to_vec()).mapv(|value| FixedPoint {
-        num: value.mantissa(),
-        scale: value.scale(),
-    });
+    let fc2_bias = Array1::from(FC2_BIAS.to_vec()).mapv(|value| (
+        value.mantissa(),
+        value.scale(),
+    ));
+
+    let payload = [
+        "DigitRecognition".encode(),
+        "SetFc2Weights".encode(),
+        (fc2_weight.clone(), fc2_bias.clone().to_vec()).encode(),
+    ]
+    .concat();
+ //   println!("FC2 PAYLOAD {:?}", hex::encode(payload));
 
     service_client
         .set_fc_2_weights(fc2_weight, fc2_bias.to_vec())
-        .send_recv(program_id)
         .await
         .unwrap();
 
-    service_client
-        .predict(pixels.to_vec())
-        .send_recv(program_id)
-        .await
-        .unwrap();
+let payload = [
+        "DigitRecognition".encode(),
+        "Predict".encode(),
+        (pixels.clone().to_vec()).encode(),
+    ]
+    .concat();
+    println!("PAYLOAD {:?}", hex::encode(payload));
 
-    let result = service_client.result().recv(program_id).await.unwrap();
+    service_client.predict(pixels.to_vec()).await.unwrap();
+
+    let result = service_client.result().await.unwrap();
 
     let result_f64: Vec<f64> = result.iter().map(|fp| fixed_point_to_float(fp)).collect();
     for (index, &prob) in result_f64.iter().enumerate() {
@@ -158,10 +184,9 @@ fn array4_to_fixed_points<const M: usize, const N: usize, const I: usize, const 
         .flat_map(|layer| {
             layer.iter().flat_map(|matrix| {
                 matrix.iter().flat_map(|row| {
-                    row.iter().map(move |&value| FixedPoint {
-                        num: value.mantissa(),
-                        scale: value.scale(),
-                    })
+                    row.iter().map(move |&value| (
+                        value.mantissa(),
+                         value.scale()))
                 })
             })
         })
@@ -174,10 +199,10 @@ pub fn array2_to_fixed_points<const M: usize, const N: usize>(
     array
         .iter()
         .flat_map(|row| {
-            row.iter().map(|&value| FixedPoint {
-                num: value.mantissa(),
-                scale: value.scale(),
-            })
+            row.iter().map(|&value| (
+                 value.mantissa(),
+                 value.scale()
+            ))
         })
         .collect()
 }
@@ -320,6 +345,6 @@ impl MnistApp {
 }
 
 fn fixed_point_to_float(fixed_point: &FixedPoint) -> f64 {
-    let scale_factor = 10_f64.powi(fixed_point.scale as i32);
-    fixed_point.num as f64 / scale_factor
+    let scale_factor = 10_f64.powi(fixed_point.1 as i32);
+    fixed_point.0 as f64 / scale_factor
 }
