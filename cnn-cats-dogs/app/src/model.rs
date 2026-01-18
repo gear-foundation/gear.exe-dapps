@@ -1,4 +1,3 @@
-use crate::model_constants::*;
 use ndarray::{s, Array1, Array2, Array3};
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::{Decimal, MathematicalOps};
@@ -236,7 +235,7 @@ impl Model {
         }
     }
 
-    pub fn set_layer_filters(&mut self, layer: u8, filters: Vec<Vec<i64>>, row_start: usize) {
+    pub fn set_layer_filters(&mut self, layer: u16, filters: Vec<Vec<i64>>, row_start: usize) {
         match layer {
             1 => {
                 self.layer_1.add_filters_part(filters, row_start);
@@ -256,7 +255,7 @@ impl Model {
 
     pub fn set_layer_bias(
         &mut self,
-        layer: u8,
+        layer: u16,
         bias: Vec<i64>,
         gamma: Vec<i64>,
         beta: Vec<i64>,
@@ -317,14 +316,10 @@ impl Model {
         }
 
         let filters = match layer {
-            // 1 => &self.layer_1.filters,
-            1 => &convert_to_array2(CONV1_FILTERS),
-            // 2 => &self.layer_2.filters,
-            2 => &convert_to_array2(CONV2_FILTERS),
+            1 => &self.layer_1.filters,
+            2 => &self.layer_2.filters,
             3 => &self.layer_3.filters,
-            // 3 => &convert_to_array2(CONV3_FILTERS),
             4 => &self.layer_4.filters,
-            //4 => &convert_to_array2(CONV4_FILTERS),
             _ => panic!("Unknown layer"),
         };
 
@@ -347,38 +342,10 @@ impl Model {
         result: &mut Array2<i128>,
     ) -> (usize, bool) {
         let bias = match layer {
-            // 1 => &self.layer_1.bias,
-            1 => &Array1::from(
-                CONV1_BIAS
-                    .to_vec()
-                    .iter()
-                    .map(|&x| x as i128)
-                    .collect::<Vec<i128>>(),
-            ),
-            // 2 => &self.layer_2.bias,
-            2 => &Array1::from(
-                CONV2_BIAS
-                    .to_vec()
-                    .iter()
-                    .map(|&x| x as i128)
-                    .collect::<Vec<i128>>(),
-            ),
-            // 3 => &self.layer_3.bias,
-            3 => &Array1::from(
-                CONV3_BIAS
-                    .to_vec()
-                    .iter()
-                    .map(|&x| x as i128)
-                    .collect::<Vec<i128>>(),
-            ),
-            // 4 => &self.layer_4.bias,
-            4 => &Array1::from(
-                CONV4_BIAS
-                    .to_vec()
-                    .iter()
-                    .map(|&x| x as i128)
-                    .collect::<Vec<i128>>(),
-            ),
+            1 => &self.layer_1.bias,
+            2 => &self.layer_2.bias,
+            3 => &self.layer_3.bias,
+            4 => &self.layer_4.bias,
             _ => panic!("Unknown layer"),
         };
 
@@ -427,140 +394,28 @@ impl Model {
 
         let (gamma, beta, mean, variance) = match layer {
             1 => (
-                // &self.layer_1.gamma,
-                // &self.layer_1.beta,
-                // &self.layer_1.mean,
-                // &self.layer_1.variance,
-                &Array1::from(
-                    BATCH_NORM1_GAMMA
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM1_BETA
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM1_MEAN
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM1_VARIANCE
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
+                &self.layer_1.gamma,
+                &self.layer_1.beta,
+                &self.layer_1.mean,
+                &self.layer_1.variance,
             ),
             2 => (
-                // &self.layer_2.gamma,
-                // &self.layer_2.beta,
-                // &self.layer_2.mean,
-                // &self.layer_2.variance,
-                &Array1::from(
-                    BATCH_NORM2_GAMMA
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM2_BETA
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM2_MEAN
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM2_VARIANCE
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
+                &self.layer_2.gamma,
+                &self.layer_2.beta,
+                &self.layer_2.mean,
+                &self.layer_2.variance,
             ),
             3 => (
-                // &self.layer_3.gamma,
-                // &self.layer_3.beta,
-                // &self.layer_3.mean,
-                // &self.layer_3.variance,
-                &Array1::from(
-                    BATCH_NORM3_GAMMA
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM3_BETA
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM3_MEAN
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM3_VARIANCE
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
+                &self.layer_3.gamma,
+                &self.layer_3.beta,
+                &self.layer_3.mean,
+                &self.layer_3.variance,
             ),
             4 => (
-                // &self.layer_4.gamma,
-                // &self.layer_4.beta,
-                // &self.layer_4.mean,
-                // &self.layer_4.variance,
-                &Array1::from(
-                    BATCH_NORM4_GAMMA
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM4_BETA
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM4_MEAN
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
-                &Array1::from(
-                    BATCH_NORM4_VARIANCE
-                        .to_vec()
-                        .iter()
-                        .map(|&x| x as i128)
-                        .collect::<Vec<i128>>(),
-                ),
+                &self.layer_4.gamma,
+                &self.layer_4.beta,
+                &self.layer_4.mean,
+                &self.layer_4.variance,
             ),
             _ => panic!("Unknown layer"),
         };
@@ -625,47 +480,11 @@ impl Model {
     pub fn dense_1_apply(&self, input: &Array2<i128>) -> Array1<i128> {
         let (weights, bias, mean, variance, gamma, beta) = (
             &self.dense_layer_1.filters,
-            // &convert_to_array2(DENSE1_WEIGHT),
-            // &self.dense_layer_1.bias,
-            // &self.dense_layer_1.mean,
-            // &self.dense_layer_1.variance,
-            // &self.dense_layer_1.gamma,
-            // &self.dense_layer_1.beta,
-            &Array1::from(
-                DENSE1_BIAS
-                    .to_vec()
-                    .iter()
-                    .map(|&x| x as i128)
-                    .collect::<Vec<i128>>(),
-            ),
-            &Array1::from(
-                BATCH_NORM5_MEAN
-                    .to_vec()
-                    .iter()
-                    .map(|&x| x as i128)
-                    .collect::<Vec<i128>>(),
-            ),
-            &Array1::from(
-                BATCH_NORM5_VARIANCE
-                    .to_vec()
-                    .iter()
-                    .map(|&x| x as i128)
-                    .collect::<Vec<i128>>(),
-            ),
-            &Array1::from(
-                BATCH_NORM5_GAMMA
-                    .to_vec()
-                    .iter()
-                    .map(|&x| x as i128)
-                    .collect::<Vec<i128>>(),
-            ),
-            &Array1::from(
-                BATCH_NORM5_BETA
-                    .to_vec()
-                    .iter()
-                    .map(|&x| x as i128)
-                    .collect::<Vec<i128>>(),
-            ),
+            &self.dense_layer_1.bias,
+            &self.dense_layer_1.mean,
+            &self.dense_layer_1.variance,
+            &self.dense_layer_1.gamma,
+            &self.dense_layer_1.beta,
         );
 
         let result = multiply_fixed_point_matrices(&input.t().to_owned(), weights);
@@ -758,7 +577,6 @@ fn multiply_fixed_point_matrices(a: &Array2<i128>, b: &Array2<i128>) -> Array2<i
 
     let total_elements = rows * cols;
     let mut idx = 0;
-
     while idx < total_elements {
         let i = idx / cols;
         let j = idx % cols;
@@ -792,15 +610,5 @@ fn fixed_point_sqrt(value: i128) -> i128 {
         .round();
 
     scaled_result.to_i128().unwrap()
-}
-
-fn convert_to_array2<const M: usize, const N: usize>(array: [[i64; M]; N]) -> Array2<i128> {
-    let flattened: Vec<i128> = array
-        .iter()
-        .flat_map(|row| row.iter())
-        .map(|&x| x as i128)
-        .collect();
-
-    Array2::from_shape_vec((N, M), flattened).expect("Shape mismatch")
 }
 

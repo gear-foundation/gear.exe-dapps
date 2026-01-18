@@ -1,7 +1,9 @@
-use cnn_cats_dogs_client::{traits::*, CalcResult};
+use cnn_cats_dogs_client::CnnCatsDogsCtors;
+use cnn_cats_dogs_client::CnnCatsDogs as ClientCnnCatsDogs;
+use cnn_cats_dogs_client::cnn_cats_dogs::CnnCatsDogs;
+use cnn_cats_dogs_client::cnn_cats_dogs::CnnCatsDogsImpl;
 use image::io::Reader as ImageReader;
-use ndarray::{s, Array3, Array4};
-use sails_rs::{calls::*, gtest::System, ActorId, Encode};
+use sails_rs::{Encode};
 use serde_json::Value;
 use std::fs::File;
 use std::fs::OpenOptions;
@@ -10,63 +12,48 @@ use std::io::Write;
 pub mod model_constants;
 use model_constants::*;
 const ACTOR_ID: u64 = 42;
-use cnn_cats_dogs_client::FixedPoint;
-use sails_rs::calls::Action;
-use sails_rs::gtest::calls::GTestRemoting;
-
-fn flatten_3d_to_1d(pixels: Vec<Vec<Vec<u8>>>) -> Vec<u8> {
-    pixels.into_iter().flatten().flatten().collect()
-}
+use cnn_cats_dogs_app::FixedPoint;
+use sails_rs::client::*;
+use sails_rs::gtest::System;
 
 fn convert_to_vec<const ROWS: usize, const COLS: usize>(
-    input: [[i64; COLS]; ROWS],
+    input: &[[i64; COLS]; ROWS],
 ) -> Vec<Vec<i64>> {
     input.iter().map(|row| row.to_vec()).collect()
 }
 
 fn convert_to_vec_i32<const ROWS: usize, const COLS: usize>(
-    input: [[i32; COLS]; ROWS],
+    input: &[[i32; COLS]; ROWS],
 ) -> Vec<Vec<i32>> {
     input.iter().map(|row| row.to_vec()).collect()
 }
 
-fn load_and_preprocess_image(path: &str) -> Array3<u8> {
+fn load_and_preprocess_image(path: &str) -> Vec<u16> {
     let img = ImageReader::open(path)
         .expect("Failed to open image")
         .decode()
         .expect("Failed to decode image");
 
-    let resized_img = img
+    let resized = img
         .resize_exact(128, 128, image::imageops::FilterType::Nearest)
         .to_rgba8();
 
-    let mut array = Array4::<u8>::zeros((1, 128, 128, 3));
+    let mut out = Vec::with_capacity(128 * 128 * 3);
 
-    for (x, y, pixel) in resized_img.enumerate_pixels() {
-        let [r, g, b, _] = pixel.0;
-        array[[0, y as usize, x as usize, 0]] = r;
-        array[[0, y as usize, x as usize, 1]] = g;
-        array[[0, y as usize, x as usize, 2]] = b;
+    for (_x, _y, px) in resized.enumerate_pixels() {
+        let [r, g, b, _a] = px.0;
+        out.push(r as u16);
+        out.push(g as u16);
+        out.push(b as u16);
     }
 
-    array.slice(s![0, .., .., ..]).to_owned()
-}
-
-fn array3_to_fixed_point(array: Array3<u8>) -> Vec<Vec<Vec<u8>>> {
-    array
-        .outer_iter()
-        .map(|filter| {
-            filter
-                .outer_iter()
-                .map(|row| row.iter().copied().collect::<Vec<u8>>())
-                .collect::<Vec<Vec<u8>>>()
-        })
-        .collect()
+    out
 }
 
 fn fixed_point_to_float(fixed_point: &FixedPoint) -> f64 {
-    let scale_factor = 10_f64.powi(fixed_point.scale as i32);
-    fixed_point.num as f64 / scale_factor
+    let scale_factor = 10_f64.powi(fixed_point.1 as i32);
+    println!("scale_factor {:?}", scale_factor);
+    fixed_point.0 as f64 / scale_factor
 }
 
 // Main prediction test
@@ -76,26 +63,23 @@ async fn model_predict() {
     system.init_logger();
     system.mint_to(ACTOR_ID, 10_000_000_000_000_000);
 
-    let remoting = GTestRemoting::new(system, ACTOR_ID.into());
-    remoting.system().init_logger();
+    let env = GtestEnv::new(system, ACTOR_ID.into());
 
-    let image_path = "10014.jpg";
-    let pixels = flatten_3d_to_1d(array3_to_fixed_point(load_and_preprocess_image(image_path)));
+    let image_path = "1.jpg";
+    let pixels = load_and_preprocess_image(image_path);
 
     save_pixels_to_json("pixels.json", &pixels);
 
     // Submit program code into the system
-    let program_code_id = remoting.system().submit_code(cnn_cats_dogs::WASM_BINARY);
+    let program_code_id = env.system().submit_code(cnn_cats_dogs::WASM_BINARY);
 
-    let program_factory = cnn_cats_dogs_client::CnnCatsDogsFactory::new(remoting.clone());
-
-    let program_id = program_factory
-        .new() // Call program's constructor (see app/src/lib.rs:29)
-        .send_recv(program_code_id, b"salt")
+    let program = env
+        .deploy::<cnn_cats_dogs_client::CnnCatsDogsProgram>(program_code_id, b"salt".to_vec())
+        .init()
         .await
         .unwrap();
 
-    let mut service_client = cnn_cats_dogs_client::CnnCatsDogs::new(remoting.clone());
+    let mut service_client = program.cnn_cats_dogs();
 
     let mut file = OpenOptions::new()
         .create(true)
@@ -104,29 +88,27 @@ async fn model_predict() {
         .expect("Unable to open file");
 
     // Upload layers
-    upload_layer(1, &mut service_client, program_id, &mut file).await;
-    upload_layer(2, &mut service_client, program_id, &mut file).await;
-    upload_layer(3, &mut service_client, program_id, &mut file).await;
-    upload_layer(4, &mut service_client, program_id, &mut file).await;
+    upload_layer(1, &mut service_client, &mut file).await;
+    upload_layer(2, &mut service_client, &mut file).await;
+    upload_layer(3, &mut service_client, &mut file).await;
+    upload_layer(4, &mut service_client, &mut file).await;
 
     // Dense layers
-    upload_dense_layer(1, &mut service_client, program_id, &mut file).await;
-    upload_dense_layer(2, &mut service_client, program_id, &mut file).await;
+    upload_dense_layer(1, &mut service_client, &mut file).await;
+    upload_dense_layer(2, &mut service_client, &mut file).await;
 
     // START
     service_client
         .predict(pixels, false)
-        .send_recv(program_id)
         .await
         .unwrap();
 
     // Layer 1
     process_layer(
         &mut service_client,
-        program_id,
         15876,
-        3000,
-        vec![(0, 16), (16, 16)],
+        1500,
+        vec![(0, 10), (10, 10), (20, 12)],
         vec![(0, 10), (10, 10), (20, 12)],
     )
     .await;
@@ -134,9 +116,8 @@ async fn model_predict() {
     // Layer 2
     process_layer(
         &mut service_client,
-        program_id,
         3721,
-        150,
+        100,
         vec![(0, 70)],
         vec![(0, 70)],
     )
@@ -145,9 +126,8 @@ async fn model_predict() {
     // Layer 3
     process_layer(
         &mut service_client,
-        program_id,
         784,
-        50,
+        30,
         vec![(0, 100)],
         vec![(0, 100)],
     )
@@ -156,9 +136,8 @@ async fn model_predict() {
     // Layer 4
     process_layer(
         &mut service_client,
-        program_id,
         144,
-        17,
+        10,
         vec![(0, 200)],
         vec![(0, 200)],
     )
@@ -167,29 +146,28 @@ async fn model_predict() {
     // Flatten
     service_client
         .flatten(false)
-        .send_recv(program_id)
         .await
         .unwrap();
 
     // Dense Layers
-    process_dense_layer(&mut service_client, program_id).await;
-    process_dense_layer(&mut service_client, program_id).await;
+    process_dense_layer(&mut service_client).await;
+    process_dense_layer(&mut service_client).await;
 
     // Final Result
-    let CalcResult {
+    let (
         probability,
         calculated,
-    } = service_client
+     ) = service_client
         .get_probability()
-        .recv(program_id)
         .await
         .unwrap();
 
     println!("Calculated {:?}", calculated);
+    println!("Probability {:?}", probability);
     println!("Probability {:?}", fixed_point_to_float(&probability));
 }
 
-fn save_pixels_to_json(file_path: &str, pixels: &[u8]) {
+fn save_pixels_to_json(file_path: &str, pixels: &[u16]) {
     let json_data = Value::Array(
         pixels
             .iter()
@@ -206,8 +184,7 @@ fn save_pixels_to_json(file_path: &str, pixels: &[u8]) {
 }
 
 async fn process_layer(
-    service_client: &mut cnn_cats_dogs_client::CnnCatsDogs<GTestRemoting>,
-    program_id: ActorId,
+    service_client: &mut Service<CnnCatsDogsImpl, GtestEnv>,
     cols: u16,
     batch_size: usize,
     bias_steps: Vec<(u16, u16)>,
@@ -216,13 +193,11 @@ async fn process_layer(
     // Allocate and perform im_2_col
     service_client
         .allocate_im_2_col(false)
-        .send_recv(program_id)
         .await
         .unwrap();
 
     service_client
         .im_2_col(false)
-        .send_recv(program_id)
         .await
         .unwrap();
 
@@ -230,7 +205,6 @@ async fn process_layer(
     for start_col in (0..cols).step_by(batch_size) {
         service_client
             .conv(start_col, batch_size as u16, false)
-            .send_recv(program_id)
             .await
             .unwrap();
     }
@@ -239,7 +213,6 @@ async fn process_layer(
     for (start, size) in bias_steps {
         service_client
             .add_bias_and_relu(start, size as u16, false)
-            .send_recv(program_id)
             .await
             .unwrap();
     }
@@ -248,7 +221,6 @@ async fn process_layer(
     for (start, size) in norm_steps {
         service_client
             .norm(start, size as u16, false)
-            .send_recv(program_id)
             .await
             .unwrap();
     }
@@ -256,39 +228,34 @@ async fn process_layer(
     // Convert 2D to 3D and apply pooling
     service_client
         .convert_2_d_to_3_d(false)
-        .send_recv(program_id)
         .await
         .unwrap();
 
     service_client
         .max_pool_2_d(false)
-        .send_recv(program_id)
         .await
         .unwrap();
 }
 
 async fn process_dense_layer(
-    service_client: &mut cnn_cats_dogs_client::CnnCatsDogs<GTestRemoting>,
-    program_id: ActorId,
+    service_client: &mut Service<CnnCatsDogsImpl, GtestEnv>,
 ) {
     service_client
         .dense_apply(false)
-        .send_recv(program_id)
         .await
         .unwrap();
 }
 
 async fn upload_layer(
-    layer_number: u8,
-    service_client: &mut cnn_cats_dogs_client::CnnCatsDogs<GTestRemoting>,
-    program_id: ActorId,
+    layer_number: u16,
+    service_client: &mut Service<CnnCatsDogsImpl, GtestEnv>,
     file: &mut File,
 ) {
     let filters = match layer_number {
-        1 => convert_to_vec(CONV1_FILTERS),
-        2 => convert_to_vec(CONV2_FILTERS),
-        3 => convert_to_vec(CONV3_FILTERS),
-        4 => convert_to_vec(CONV4_FILTERS),
+        1 => convert_to_vec(&CONV1_FILTERS),
+        2 => convert_to_vec(&CONV2_FILTERS),
+        3 => convert_to_vec(&CONV3_FILTERS),
+        4 => convert_to_vec(&CONV4_FILTERS),
         _ => panic!("Invalid layer number"),
     };
     let bias = match layer_number {
@@ -359,7 +326,6 @@ async fn upload_layer(
 
         service_client
             .set_layer_filters(layer_number, part, row_start as u16)
-            .send_recv(program_id)
             .await
             .unwrap();
     }
@@ -384,19 +350,17 @@ async fn upload_layer(
 
     service_client
         .set_layer_bias(layer_number, bias, gamma, beta, mean, variance)
-        .send_recv(program_id)
         .await
         .unwrap();
 }
 
 async fn upload_dense_layer(
     layer_number: u8,
-    service_client: &mut cnn_cats_dogs_client::CnnCatsDogs<GTestRemoting>,
-    program_id: ActorId,
+    service_client: &mut Service<CnnCatsDogsImpl, GtestEnv>,
     file: &mut File,
 ) {
     if layer_number == 1 {
-        let filters = convert_to_vec_i32(DENSE1_WEIGHT);
+        let filters = convert_to_vec_i32(&DENSE1_WEIGHT);
         let chunk_size = 1000;
         let parts: Vec<_> = filters
             .chunks(chunk_size)
@@ -416,7 +380,6 @@ async fn upload_dense_layer(
             writeln!(file, "\"0x{}\",", bytes).unwrap();
             service_client
                 .set_dense_1_weight_const(part, row_start as u16)
-                .send_recv(program_id)
                 .await
                 .unwrap();
         }
@@ -445,11 +408,10 @@ async fn upload_dense_layer(
 
         service_client
             .set_dense_1_bias_const(bias, gamma, beta, mean, variance)
-            .send_recv(program_id)
             .await
             .unwrap();
     } else if layer_number == 2 {
-        let filters = convert_to_vec(DENSE2_WEIGHT);
+        let filters = convert_to_vec(&DENSE2_WEIGHT);
         let bias = DENSE2_BIAS.to_vec();
 
         let bytes = hex::encode(
@@ -464,7 +426,6 @@ async fn upload_dense_layer(
 
         service_client
             .set_dense_2_const(filters, bias)
-            .send_recv(program_id)
             .await
             .unwrap();
     }

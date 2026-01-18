@@ -10,11 +10,12 @@ use sails_rs::{
 struct CnnCatsDogsService(());
 
 pub mod model;
-pub mod model_constants;
 use model::*;
-use rust_decimal::prelude::ToPrimitive;
 
 static mut STATE: Option<State> = None;
+const H: usize = 128;
+const W: usize = 128;
+const C: usize = 3;
 
 #[derive(Default)]
 pub struct State {
@@ -43,31 +44,19 @@ pub struct Config {
     norm_3_batch_size: u16,
     norm_4_batch_size: u16,
 }
-#[derive(Encode, Decode, TypeInfo, Clone)]
-pub struct FixedPoint {
-    pub num: i128,
-    pub scale: u32,
-}
+pub type FixedPoint = (i128, u32);
 
-#[derive(Encode, Decode, TypeInfo, Clone)]
-pub struct CalcResult {
-    pub probability: FixedPoint,
-    pub calculated: bool,
-}
-
-impl FixedPoint {
-    fn from_decimal(decimal: Decimal) -> Self {
-        let scale = decimal.scale();
-        let num = decimal.mantissa() as i128;
-        FixedPoint { num, scale }
-    }
-}
+pub type CalcResult = (FixedPoint, bool);
+   
 
 impl CnnCatsDogsService {
+    pub fn create() -> Self {
+        Self(())
+    }
     fn init() -> Self {
         unsafe {
             STATE = Some(State {
-             //   model: Model::init(),
+                   model: Model::init(),
                 ..Default::default()
             })
         }
@@ -83,19 +72,17 @@ impl CnnCatsDogsService {
 
 #[sails_rs::service]
 impl CnnCatsDogsService {
-    pub fn new() -> Self {
-        Self(())
-    }
-
-    pub fn set_layer_filters(&mut self, layer: u8, filters: Vec<Vec<i64>>, row_start: u16) {
+    #[export]
+    pub fn set_layer_filters(&mut self, layer: u16, filters: Vec<Vec<i64>>, row_start: u16) {
         self.get_mut()
             .model
             .set_layer_filters(layer, filters, row_start as usize);
     }
 
+    #[export]
     pub fn set_layer_bias(
         &mut self,
-        layer: u8,
+        layer: u16,
         bias: Vec<i64>,
         gamma: Vec<i64>,
         beta: Vec<i64>,
@@ -107,12 +94,14 @@ impl CnnCatsDogsService {
             .set_layer_bias(layer, bias, gamma, beta, mean, variance);
     }
 
+    #[export]
     pub fn set_dense_1_weight_const(&mut self, filters: Vec<Vec<i32>>, row_start: u16) {
         self.get_mut()
             .model
             .set_dense_1_weight_const(filters, row_start);
     }
 
+    #[export]
     pub fn set_dense_1_bias_const(
         &mut self,
         bias: Vec<i64>,
@@ -126,11 +115,13 @@ impl CnnCatsDogsService {
             .set_dense_bias_const(bias, gamma, beta, mean, variance);
     }
 
+    #[export]
     pub fn set_dense_2_const(&mut self, filters: Vec<Vec<i64>>, bias: Vec<i64>) {
         self.get_mut().model.set_dense_2_const(filters, bias);
     }
 
-    pub fn predict(&mut self, pixels: Vec<u8>, continue_execution: bool) {
+    #[export]
+    pub fn predict(&mut self, pixels: Vec<u16>, continue_execution: bool) {
         let state = self.get_mut();
         state.x = process_pixels_to_array3(pixels);
         state.probability = (Decimal::new(0, 0), false);
@@ -147,6 +138,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    #[export]
     pub fn allocate_im2col(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         let (h, w, c) = state.x.dim();
@@ -174,6 +166,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    #[export]
     pub fn im2col(&mut self, continue_execution: bool) {
         let state = self.get_mut();
 
@@ -198,6 +191,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    #[export]
     pub fn conv(&mut self, start_col: u16, batch_size: u16, continue_execution: bool) {
         let state = self.get_mut();
         let layer = state.current_layer_id;
@@ -239,6 +233,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    #[export]
     pub fn add_bias_and_relu(
         &mut self,
         start_filter_idx: u16,
@@ -283,6 +278,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    #[export]
     pub fn norm(&mut self, start_channel_id: u16, batch_size: u16, continue_execution: bool) {
         let state = self.get_mut();
         let layer = state.current_layer_id;
@@ -313,6 +309,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    #[export]
     pub fn convert_2d_to_3d(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         let layer = state.current_layer_id;
@@ -329,6 +326,8 @@ impl CnnCatsDogsService {
             msg::send_bytes(exec::program_id(), bytes, 0).expect("Error during msg sending");
         }
     }
+
+    #[export]
     pub fn max_pool_2d(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         state.current_layer_id += 1;
@@ -355,6 +354,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    #[export]
     pub fn flatten(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         state.result = Model::flatten_apply(&state.x);
@@ -364,6 +364,7 @@ impl CnnCatsDogsService {
         }
     }
 
+    #[export]
     pub fn dense_apply(&mut self, continue_execution: bool) {
         let state = self.get_mut();
         let layer = state.current_layer_id;
@@ -416,32 +417,25 @@ impl CnnCatsDogsService {
         state.result_1_d.to_vec()
     }
 
+    #[export]
     pub fn get_probability(&self) -> CalcResult {
         let state = self.get();
-        CalcResult {
-            probability: FixedPoint::from_decimal(state.probability.0),
-            calculated: state.probability.1,
-        }
+         (
+        (state.probability.0.mantissa(), state.probability.0.scale()),
+            state.probability.1,
+        )
     }
 }
 
-fn process_pixels_to_array3(pixels: Vec<u8>) -> Array3<i128> {
-    let depth = 128;
-    let height = 128;
-    let width = 3;
+fn process_pixels_to_array3(pixels: Vec<u16>) -> Array3<i128> {
+    assert_eq!(pixels.len(), H * W * C, "Expected {} pixels", H * W * C);
 
-    let array = Array3::from_shape_vec((depth, height, width), pixels)
-        .expect("The size of the vector does not match the array dimensions.");
+    let scaled: Vec<i128> = pixels
+        .into_iter()
+        .map(|v| ((v as i128) * SCALE + 255 / 2) / 255)
+        .collect();
 
-    array.mapv(|value| {
-        (Decimal::from(value) / Decimal::from(255u8))
-            // .round_dp(16)
-            .checked_mul(Decimal::from(SCALE))
-            .expect("Error in decimal multiplication")
-            .round()
-            .to_i128()
-            .unwrap()
-    })
+    Array3::from_shape_vec((H, W, C), scaled).expect("Shape mismatch")
 }
 
 fn convert_2d_to_3d(
@@ -504,13 +498,12 @@ pub struct CnnCatsDogsProgram(());
 
 #[sails_rs::program]
 impl CnnCatsDogsProgram {
-    pub fn new() -> Self {
+    pub fn init() -> Self {
         CnnCatsDogsService::init();
         Self(())
     }
 
     pub fn cnn_cats_dogs(&self) -> CnnCatsDogsService {
-        CnnCatsDogsService::new()
+        CnnCatsDogsService::create()
     }
 }
-
