@@ -104,12 +104,12 @@ async fn async_main() {
     );
 
     for (idx, &w) in FC1_WEIGHT.iter().flatten().enumerate() {
-    let q = decimal_to_i32_scaled(w, FC1_SCALE); // scale=5
-    if q < i16::MIN as i32 || q > i16::MAX as i32 {
-        println!("OVERFLOW idx={idx}, w={w}, scaled={q}");
-        break;
+        let q = decimal_to_i32_scaled(w, FC1_SCALE); // scale=5
+        if q < i16::MIN as i32 || q > i16::MAX as i32 {
+            println!("OVERFLOW idx={idx}, w={w}, scaled={q}");
+            break;
+        }
     }
-}
     let payload = [
         "DigitRecognition".encode(),
         "SetConv2Weights".encode(),
@@ -138,7 +138,10 @@ async fn async_main() {
     ]
     .concat();
     println!("FC1 {:?}", hex::encode(payload));
-    service_client.set_fc_1_weights(fc1_weight, fc1_bias.to_vec()).await.unwrap();
+    service_client
+        .set_fc_1_weights(fc1_weight, fc1_bias.to_vec())
+        .await
+        .unwrap();
 
     let fc2_weight = array2_to_i32_scaled(FC2_WEIGHT);
     let fc2_bias = Array1::from(
@@ -215,7 +218,7 @@ fn array4_to_i32_scaled<const M: usize, const N: usize, const I: usize, const J:
 
 fn decimal_to_i16_scaled(value: Decimal, target_scale: u32) -> i16 {
     let m = value.mantissa(); // i128
-    let s = value.scale();    // u32
+    let s = value.scale(); // u32
 
     let scaled: i128 = if s == target_scale {
         m
@@ -227,10 +230,10 @@ fn decimal_to_i16_scaled(value: Decimal, target_scale: u32) -> i16 {
     };
 
     let as_i32 = i32::try_from(scaled).expect("scaled value doesn't fit i32");
-     
-        if  i16::try_from(as_i32).is_err() {
-            println!("{:?} {:?}", as_i32, value)
-        }
+
+    if i16::try_from(as_i32).is_err() {
+        println!("{:?} {:?}", as_i32, value)
+    }
     i16::try_from(as_i32).expect("scaled value doesn't fit i16 (reduce scale)")
 }
 

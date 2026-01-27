@@ -1,9 +1,9 @@
-use cnn_cats_dogs_client::CnnCatsDogsCtors;
-use cnn_cats_dogs_client::CnnCatsDogs as ClientCnnCatsDogs;
 use cnn_cats_dogs_client::cnn_cats_dogs::CnnCatsDogs;
 use cnn_cats_dogs_client::cnn_cats_dogs::CnnCatsDogsImpl;
+use cnn_cats_dogs_client::CnnCatsDogs as ClientCnnCatsDogs;
+use cnn_cats_dogs_client::CnnCatsDogsCtors;
 use image::io::Reader as ImageReader;
-use sails_rs::{Encode};
+use sails_rs::Encode;
 use serde_json::Value;
 use std::fs::File;
 use std::fs::OpenOptions;
@@ -98,10 +98,7 @@ async fn model_predict() {
     upload_dense_layer(2, &mut service_client, &mut file).await;
 
     // START
-    service_client
-        .predict(pixels, false)
-        .await
-        .unwrap();
+    service_client.predict(pixels, false).await.unwrap();
 
     // Layer 1
     process_layer(
@@ -114,53 +111,23 @@ async fn model_predict() {
     .await;
 
     // Layer 2
-    process_layer(
-        &mut service_client,
-        3721,
-        100,
-        vec![(0, 70)],
-        vec![(0, 70)],
-    )
-    .await;
+    process_layer(&mut service_client, 3721, 100, vec![(0, 70)], vec![(0, 70)]).await;
 
     // Layer 3
-    process_layer(
-        &mut service_client,
-        784,
-        30,
-        vec![(0, 100)],
-        vec![(0, 100)],
-    )
-    .await;
+    process_layer(&mut service_client, 784, 30, vec![(0, 100)], vec![(0, 100)]).await;
 
     // Layer 4
-    process_layer(
-        &mut service_client,
-        144,
-        10,
-        vec![(0, 200)],
-        vec![(0, 200)],
-    )
-    .await;
+    process_layer(&mut service_client, 144, 10, vec![(0, 200)], vec![(0, 200)]).await;
 
     // Flatten
-    service_client
-        .flatten(false)
-        .await
-        .unwrap();
+    service_client.flatten(false).await.unwrap();
 
     // Dense Layers
     process_dense_layer(&mut service_client).await;
     process_dense_layer(&mut service_client).await;
 
     // Final Result
-    let (
-        probability,
-        calculated,
-     ) = service_client
-        .get_probability()
-        .await
-        .unwrap();
+    let (probability, calculated) = service_client.get_probability().await.unwrap();
 
     println!("Calculated {:?}", calculated);
     println!("Probability {:?}", probability);
@@ -191,15 +158,9 @@ async fn process_layer(
     norm_steps: Vec<(u16, u16)>,
 ) {
     // Allocate and perform im_2_col
-    service_client
-        .allocate_im_2_col(false)
-        .await
-        .unwrap();
+    service_client.allocate_im_2_col(false).await.unwrap();
 
-    service_client
-        .im_2_col(false)
-        .await
-        .unwrap();
+    service_client.im_2_col(false).await.unwrap();
 
     // Perform convolution in batches
     for start_col in (0..cols).step_by(batch_size) {
@@ -226,24 +187,13 @@ async fn process_layer(
     }
 
     // Convert 2D to 3D and apply pooling
-    service_client
-        .convert_2_d_to_3_d(false)
-        .await
-        .unwrap();
+    service_client.convert_2_d_to_3_d(false).await.unwrap();
 
-    service_client
-        .max_pool_2_d(false)
-        .await
-        .unwrap();
+    service_client.max_pool_2_d(false).await.unwrap();
 }
 
-async fn process_dense_layer(
-    service_client: &mut Service<CnnCatsDogsImpl, GtestEnv>,
-) {
-    service_client
-        .dense_apply(false)
-        .await
-        .unwrap();
+async fn process_dense_layer(service_client: &mut Service<CnnCatsDogsImpl, GtestEnv>) {
+    service_client.dense_apply(false).await.unwrap();
 }
 
 async fn upload_layer(

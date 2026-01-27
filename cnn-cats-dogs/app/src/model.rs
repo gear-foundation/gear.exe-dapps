@@ -611,4 +611,3 @@ fn fixed_point_sqrt(value: i128) -> i128 {
 
     scaled_result.to_i128().unwrap()
 }
-

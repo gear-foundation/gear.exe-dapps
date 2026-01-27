@@ -39,7 +39,7 @@ pub struct DigitRecognitionService<'a> {
     state: &'a RefCell<State>,
 }
 
-impl <'a> DigitRecognitionService<'a> {
+impl<'a> DigitRecognitionService<'a> {
     pub fn create(state: &'a RefCell<State>) -> Self {
         Self { state }
     }
@@ -80,9 +80,9 @@ impl<'a> DigitRecognitionService<'a> {
     pub fn set_fc1_weights(&mut self, weights: Vec<QuantFc1>, bias: Vec<QuantFc1>) {
         let mut state = self.get_mut();
         state.fc1 = Some(FcLayer {
-        weights: quants16_to_array2_decimal(weights, (64, 128), FC1_SCALE),
-        bias: Array1::from(bias).mapv(|v| Decimal::new(v as i64, FC1_SCALE)),
-    });
+            weights: quants16_to_array2_decimal(weights, (64, 128), FC1_SCALE),
+            bias: Array1::from(bias).mapv(|v| Decimal::new(v as i64, FC1_SCALE)),
+        });
     }
 
     #[export]

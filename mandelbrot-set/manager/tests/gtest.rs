@@ -62,7 +62,8 @@ async fn generate_and_store_points() {
 
     assert_eq!(points_len, 360_000);
 
-    let mut points: sails_rs::collections::HashMap<u32, u32> = sails_rs::collections::HashMap::with_capacity(10_000_000);
+    let mut points: sails_rs::collections::HashMap<u32, u32> =
+        sails_rs::collections::HashMap::with_capacity(10_000_000);
     println!("capacity {:?}", points.capacity());
     for i in 0..5_000_000 {
         points.insert(i, 2);

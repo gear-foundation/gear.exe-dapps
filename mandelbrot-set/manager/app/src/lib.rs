@@ -1,13 +1,13 @@
 #![no_std]
-#![allow(static_mut_refs)]
 
 use rust_decimal::Decimal;
 use sails_rs::{
+    cell::RefCell,
     collections::HashMap,
     gstd::{exec, msg},
     prelude::*,
 };
-static mut STATE: Option<ManagerState> = None;
+
 #[derive(Default)]
 struct ManagerState {
     checkers: Vec<ActorId>,
@@ -18,9 +18,8 @@ struct ManagerState {
 impl ManagerState {
     pub fn new() -> Self {
         Self {
-            checkers: Vec::new(),
-            point_results: HashMap::with_capacity(360_000),
-            points_sent: 0,
+            point_results: HashMap::with_capacity(400_000),
+            ..Default::default()
         }
     }
 }
@@ -38,6 +37,7 @@ pub struct PointResult {
     pub c_im: FixedPoint,
     pub iter: u32,
     pub checked: bool,
+    pub index: u32,
 }
 
 #[derive(Encode, Decode, TypeInfo, Clone)]
@@ -53,60 +53,78 @@ impl FixedPoint {
         Self { num, scale }
     }
 }
-struct ManagerService(());
+pub struct ManagerService<'a> {
+    state: &'a RefCell<ManagerState>,
+}
 
-impl ManagerService {
-    pub fn init() -> Self {
-        unsafe { STATE = Some(ManagerState::new()) }
-        Self(())
+impl<'a> ManagerService<'a> {
+    fn create(state: &'a RefCell<ManagerState>) -> Self {
+        Self { state }
     }
-    pub fn get_mut(&mut self) -> &'static mut ManagerState {
-        unsafe { STATE.as_mut().expect("STATE is not initialized") }
+    #[inline]
+    fn get_mut(&self) -> sails_rs::cell::RefMut<'_, ManagerState> {
+        self.state.borrow_mut()
     }
-    pub fn get(&self) -> &'static ManagerState {
-        unsafe { STATE.as_ref().expect("STATE is not initialized") }
+
+    #[inline]
+    fn get(&self) -> sails_rs::cell::Ref<'_, ManagerState> {
+        self.state.borrow()
     }
 }
 
 #[sails_rs::service]
-impl ManagerService {
-    pub fn new() -> Self {
-        Self(())
-    }
-
-    pub async fn add_checkers(&mut self, checkers: Vec<ActorId>) {
+impl<'a> ManagerService<'a> {
+    #[export]
+    pub async fn add_checkers(&mut self, checkers: Vec<[u16; 32]>) {
+        let checkers_bytes: Vec<[u8; 32]> = checkers
+            .into_iter()
+            .map(|arr_u16| {
+                let mut arr_u8 = [0u8; 32];
+                for (i, val) in arr_u16.into_iter().enumerate() {
+                    arr_u8[i] = u8::try_from(val).expect("value out of range for u8");
+                }
+                arr_u8
+            })
+            .collect();
+        let checkers: Vec<ActorId> = checkers_bytes.into_iter().map(ActorId::from).collect();
         self.get_mut().checkers.extend(checkers);
     }
 
+    #[export]
     pub fn restart(&mut self) {
         self.get_mut().point_results.clear();
         self.get_mut().points_sent = 0;
     }
+
+    #[export]
     pub fn generate_and_store_points(
         &mut self,
         width: u32,
         height: u32,
-        x_min: FixedPoint,
-        x_max: FixedPoint,
-        y_min: FixedPoint,
-        y_max: FixedPoint,
+        x_min_num: i64,
+        x_min_scale: u32,
+        x_max_num: i64,
+        x_max_scale: u32,
+        y_min_num: i64,
+        y_min_scale: u32,
+        y_max_num: i64,
+        y_max_scale: u32,
         points_per_call: u32,
         continue_generation: bool,
-        check_points_after_generation: bool,
+        check_points_after_generation: u32,
         max_iter: u32,
         batch_size: u32,
     ) {
-        let x_min_dec = Decimal::new(x_min.num, x_min.scale);
-        let x_max_dec = Decimal::new(x_max.num, x_max.scale);
-        let y_min_dec = Decimal::new(y_min.num, y_min.scale);
-        let y_max_dec = Decimal::new(y_max.num, y_max.scale);
+        let x_min_dec = Decimal::new(x_min_num, x_min_scale);
+        let x_max_dec = Decimal::new(x_max_num, x_max_scale);
+        let y_min_dec = Decimal::new(y_min_num, y_min_scale);
+        let y_max_dec = Decimal::new(y_max_num, y_max_scale);
 
         let scale_x = (x_max_dec - x_min_dec) / Decimal::from(width);
         let scale_y = (y_max_dec - y_min_dec) / Decimal::from(height);
 
         let total_points = width * height;
         let total_generated_points = self.get_mut().point_results.len() as u32;
-
         if total_generated_points >= total_points {
             return;
         }
@@ -133,10 +151,14 @@ impl ManagerService {
                 (
                     width,
                     height,
-                    x_min,
-                    x_max,
-                    y_min,
-                    y_max,
+                    x_min_num,
+                    x_min_scale,
+                    x_max_num,
+                    x_max_scale,
+                    y_min_num,
+                    y_min_scale,
+                    y_max_num,
+                    y_max_scale,
                     points_per_call,
                     continue_generation,
                     check_points_after_generation,
@@ -149,36 +171,46 @@ impl ManagerService {
             msg::send_bytes(exec::program_id(), payload, 0).expect("Error during msg sending");
         }
 
-        if check_points_after_generation && self.get_mut().point_results.len() as u32 >= total_points {
+        if check_points_after_generation > 0
+            && self.get_mut().point_results.len() as u32 >= total_points
+        {
             let payload = [
                 "Manager".encode(),
                 "CheckPointsSet".encode(),
-                (max_iter, batch_size, true).encode(),
+                (max_iter, batch_size, check_points_after_generation).encode(),
             ]
             .concat();
             msg::send_bytes(exec::program_id(), payload, 0).expect("Error during msg sending");
         }
     }
 
-    pub fn check_points_set(&mut self, max_iter: u32, batch_size: u32, continue_checking: bool) {
-        let checkers = &self.get().checkers;
-        let points = &self.get().point_results;
-
-        if checkers.is_empty() || points.is_empty() {
+    #[export]
+    pub fn check_points_set(&mut self, max_iter: u32, batch_size: u32, rounds_left: u32) {
+        if rounds_left == 0 {
             return;
         }
 
+        let (checkers, points_len) = {
+            let state = self.get();
+
+            if state.checkers.is_empty() || state.point_results.is_empty() {
+                return;
+            }
+
+            (state.checkers.clone(), state.point_results.len() as u32)
+        };
         for checker in checkers.iter() {
-            if self.get().points_sent >= points.len() as u32 {
+            if self.get().points_sent >= points_len {
                 break;
             }
             self.send_next_batch(*checker, max_iter, batch_size);
         }
-        if continue_checking && self.get().points_sent < self.get().point_results.len() as u32 {
+
+        if rounds_left > 1 && self.get().points_sent < self.get().point_results.len() as u32 {
             let payload = [
                 "Manager".encode(),
                 "CheckPointsSet".encode(),
-                (max_iter, batch_size, continue_checking).encode(),
+                (max_iter, batch_size, rounds_left - 1).encode(),
             ]
             .concat();
             msg::send_bytes(exec::program_id(), payload, 0).expect("Error during msg sending");
@@ -205,20 +237,21 @@ impl ManagerService {
             return;
         }
 
+        let points_u16: Vec<u16> = points_to_send.encode().iter().map(|&x| x as u16).collect();
         self.get_mut().points_sent += points_to_send.len() as u32;
 
         let payload = [
             "MandelbrotChecker".encode(),
             "CheckMandelbrotPoints".encode(),
-            (points_to_send, max_iter).encode(),
+            (points_u16, max_iter).encode(),
         ]
         .concat();
 
         msg::send_bytes(checker, payload, 0).expect("Failed to send points to checker");
     }
 
+    #[export]
     pub fn result_calculated(&mut self, indexes: Vec<u32>, results: Vec<u32>) {
-        // sails_rs::gstd::debug!("Received indexes from {} to {}", indexes[0], indexes[19]);
         indexes
             .into_iter()
             .zip(results)
@@ -230,19 +263,23 @@ impl ManagerService {
             });
     }
 
+    #[export]
     pub fn get_points_len(&self) -> u32 {
         self.get().point_results.len() as u32
     }
 
-    pub fn get_checkers(&self) -> Vec<ActorId> {
-        self.get().checkers.clone()
+    #[export]
+    pub fn get_checkers(&self) -> Vec<u8> {
+        self.get().checkers.clone().encode()
     }
 
+    #[export]
     pub fn points_sent(&self) -> u32 {
         self.get().points_sent
     }
 
-    pub fn get_results(&self, start_index: u32, end_index: u32) -> Vec<PointResult> {
+    #[export]
+    pub fn get_results(&self, start_index: u32, end_index: u32) -> Vec<u8> {
         let results = &self.get().point_results;
 
         results
@@ -254,27 +291,39 @@ impl ManagerService {
                         c_im: c_im.clone(),
                         iter,
                         checked,
+                        index,
                     })
                 } else {
                     None
                 }
             })
-            .collect()
+            .collect::<Vec<PointResult>>()
+            .encode()
+    }
+
+    #[export]
+    pub fn get_checked_count(&self) -> u32 {
+        self.get()
+            .point_results
+            .values()
+            .filter(|(_, _, _, checked)| *checked)
+            .count() as u32
     }
 }
 
-pub struct ManagerProgram(());
-
+pub struct ManagerProgram {
+    state: RefCell<ManagerState>,
+}
 #[sails_rs::program]
 impl ManagerProgram {
-    // Program's constructor
-    pub fn new() -> Self {
-        ManagerService::init();
-        Self(())
+    pub fn init() -> Self {
+        Self {
+            state: RefCell::new(ManagerState::new()),
+        }
     }
 
     // Exposed service
-    pub fn manager(&self) -> ManagerService {
-        ManagerService::new()
+    pub fn manager(&self) -> ManagerService<'_> {
+        ManagerService::create(&self.state)
     }
 }

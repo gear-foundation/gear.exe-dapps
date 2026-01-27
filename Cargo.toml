@@ -2,10 +2,16 @@
 resolver = "2"
 
 members = [
+    "arkanoid/vara-eth/",
+    "arkanoid/vara-eth/client",
     "cnn-cats-dogs",
     "cnn-cats-dogs/client",
     "digit-recognition",
     "digit-recognition/client",
+    "mandelbrot-set/manager",
+    "mandelbrot-set/manager/client",
+    "mandelbrot-set/mandelbrot-checker",
+    "mandelbrot-set/mandelbrot-checker/client",
 ]
 
 [workspace.package]

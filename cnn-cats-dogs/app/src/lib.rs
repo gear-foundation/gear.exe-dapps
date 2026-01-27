@@ -47,7 +47,6 @@ pub struct Config {
 pub type FixedPoint = (i128, u32);
 
 pub type CalcResult = (FixedPoint, bool);
-   
 
 impl CnnCatsDogsService {
     pub fn create() -> Self {
@@ -56,7 +55,7 @@ impl CnnCatsDogsService {
     fn init() -> Self {
         unsafe {
             STATE = Some(State {
-                   model: Model::init(),
+                model: Model::init(),
                 ..Default::default()
             })
         }
@@ -420,8 +419,8 @@ impl CnnCatsDogsService {
     #[export]
     pub fn get_probability(&self) -> CalcResult {
         let state = self.get();
-         (
-        (state.probability.0.mantissa(), state.probability.0.scale()),
+        (
+            (state.probability.0.mantissa(), state.probability.0.scale()),
             state.probability.1,
         )
     }

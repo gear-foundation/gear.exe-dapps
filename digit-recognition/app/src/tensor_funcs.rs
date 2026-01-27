@@ -209,7 +209,11 @@ pub fn flatten_4d_to_1d(input: &Vec<Vec<Vec<Vec<Decimal>>>>) -> Vec<Decimal> {
         .collect()
 }
 
-pub fn quants16_to_array2_decimal(values: Vec<i16>, shape: (usize, usize), scale: u32) -> Array2<Decimal> {
+pub fn quants16_to_array2_decimal(
+    values: Vec<i16>,
+    shape: (usize, usize),
+    scale: u32,
+) -> Array2<Decimal> {
     let decs: Vec<Decimal> = values
         .into_iter()
         .map(|v| Decimal::new(v as i64, scale))
