@@ -1,0 +1,26 @@
+[package]
+name = "vara-arkanoid"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+vara-arkanoid-app = { path = "app" }
+futures = { version = "0.3", default-features = false }
+
+[build-dependencies]
+vara-arkanoid-app = { path = "app" }
+sails-rs = { workspace = true, features = ["wasm-builder", "ethexe"] }
+sails-idl-gen.workspace = true
+
+[dev-dependencies]
+vara-arkanoid = { path = ".", features = ["wasm-binary"] }
+vara-arkanoid-client = { path = "client" }
+sails-rs = { workspace = true, features = ["gtest"] }
+tokio = { version = "1.40", features = ["rt", "macros"] }
+ggez = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+
+[features]
+wasm-binary = []

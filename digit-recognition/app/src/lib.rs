@@ -1,90 +1,97 @@
 #![no_std]
-#![allow(static_mut_refs)]
 
 use ndarray::{Array1, Array2, Array3};
 use rust_decimal::Decimal;
-use sails_rs::prelude::*;
-struct DigitRecognitionService(());
+use sails_rs::{cell::RefCell, prelude::*};
+
 pub mod tensor_funcs;
 use tensor_funcs::*;
 
 const GREYSCALE_SIZE: u32 = 255;
+pub const WEIGHT_SCALE: u32 = 6;
+pub const FC1_SCALE: u32 = 4;
 
-static mut STATE: Option<State> = None;
+pub type Quant = i32;
+pub type QuantFc1 = i16;
 
 #[derive(Default)]
 pub struct State {
-    conv1_weights: Array2<Decimal>,
-    conv1_bias: Array1<Decimal>,
-    conv2_weights: Array2<Decimal>,
-    conv2_bias: Array1<Decimal>,
-    fc1_weights: Array2<Decimal>,
-    fc1_bias: Array1<Decimal>,
-    fc2_weights: Array2<Decimal>,
-    fc2_bias: Array1<Decimal>,
-
-    result: Option<Vec<FixedPoint>>,
-}
-#[derive(Encode, Decode, TypeInfo, Clone)]
-pub struct FixedPoint {
-    pub num: i128,
-    pub scale: u32,
+    conv1: Option<ConvLayer>,
+    conv2: Option<ConvLayer>,
+    fc1: Option<FcLayer>,
+    fc2: Option<FcLayer>,
+    result: Option<Vec<Quant>>,
 }
 
-impl FixedPoint {
-    pub fn from_decimal(decimal: &Decimal) -> Self {
-        FixedPoint {
-            num: decimal.mantissa(),
-            scale: decimal.scale(),
-        }
-    }
+#[derive(Clone)]
+pub struct ConvLayer {
+    pub weights: Array2<Decimal>,
+    pub bias: Array1<Decimal>,
 }
 
-impl DigitRecognitionService {
-    pub fn init() -> Self {
-        unsafe { STATE = Some(State::default()) }
-        Self(())
+#[derive(Clone)]
+pub struct FcLayer {
+    pub weights: Array2<Decimal>,
+    pub bias: Array1<Decimal>,
+}
+
+pub struct DigitRecognitionService<'a> {
+    state: &'a RefCell<State>,
+}
+
+impl<'a> DigitRecognitionService<'a> {
+    pub fn create(state: &'a RefCell<State>) -> Self {
+        Self { state }
     }
-    pub fn get_mut(&mut self) -> &'static mut State {
-        unsafe { STATE.as_mut().expect("STATE is not initialized") }
+    #[inline]
+    pub fn get_mut(&self) -> sails_rs::cell::RefMut<'_, State> {
+        self.state.borrow_mut()
     }
-    pub fn get(&self) -> &'static State {
-        unsafe { STATE.as_ref().expect("STATE is not initialized") }
+
+    #[inline]
+    pub fn get(&self) -> sails_rs::cell::Ref<'_, State> {
+        self.state.borrow()
     }
 }
 
 #[sails_rs::service]
-impl DigitRecognitionService {
-    pub fn new() -> Self {
-        Self(())
+impl<'a> DigitRecognitionService<'a> {
+    #[export]
+    pub fn set_conv1_weights(&mut self, weights: Vec<Quant>, bias: Vec<Quant>) {
+        let mut state = self.get_mut();
+
+        state.conv1 = Some(ConvLayer {
+            weights: filter_to_matrix_from_flat(&i32_to_decimal_vector(&weights), 8, 1, 5, 5),
+            bias: Array1::from(bias).mapv(|v| Decimal::new(v as i64, WEIGHT_SCALE)),
+        });
     }
 
-    pub fn set_conv1_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
-        let state = self.get_mut();
+    #[export]
+    pub fn set_conv2_weights(&mut self, weights: Vec<Quant>, bias: Vec<Quant>) {
+        let mut state = self.get_mut();
 
-        state.conv1_weights =
-            filter_to_matrix_from_flat(&fixed_points_to_decimal_vector(&weights), 8, 1, 5, 5);
-        state.conv1_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+        state.conv2 = Some(ConvLayer {
+            weights: filter_to_matrix_from_flat(&i32_to_decimal_vector(&weights), 8, 8, 5, 5),
+            bias: Array1::from(bias).mapv(|v| Decimal::new(v as i64, WEIGHT_SCALE)),
+        });
     }
 
-    pub fn set_conv2_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
-        let state = self.get_mut();
-        state.conv2_weights =
-            filter_to_matrix_from_flat(&fixed_points_to_decimal_vector(&weights), 8, 8, 5, 5);
-
-        state.conv2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+    #[export]
+    pub fn set_fc1_weights(&mut self, weights: Vec<QuantFc1>, bias: Vec<QuantFc1>) {
+        let mut state = self.get_mut();
+        state.fc1 = Some(FcLayer {
+            weights: quants16_to_array2_decimal(weights, (64, 128), FC1_SCALE),
+            bias: Array1::from(bias).mapv(|v| Decimal::new(v as i64, FC1_SCALE)),
+        });
     }
 
-    pub fn set_fc1_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
-        let state = self.get_mut();
-        state.fc1_weights = fixed_points_to_array2(weights, (64, 128));
-        state.fc1_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
-    }
-
-    pub fn set_fc2_weights(&mut self, weights: Vec<FixedPoint>, bias: Vec<FixedPoint>) {
-        let state = self.get_mut();
-        state.fc2_weights = fixed_points_to_array2(weights, (10, 64));
-        state.fc2_bias = Array1::from(bias).mapv(|fp| Decimal::new(fp.num as i64, fp.scale));
+    #[export]
+    pub fn set_fc2_weights(&mut self, weights: Vec<Quant>, bias: Vec<Quant>) {
+        let mut state = self.get_mut();
+        state.fc2 = Some(FcLayer {
+            weights: quants_to_array2(weights, (10, 64)),
+            bias: Array1::from(bias).mapv(|v| Decimal::new(v as i64, WEIGHT_SCALE)),
+        });
     }
 
     /// Converts raw pixels into a 3D tensor
@@ -113,62 +120,95 @@ impl DigitRecognitionService {
     }
 
     /// Applies the first convolutional layer
+    #[export]
     pub fn predict(&mut self, pixels: Vec<u16>) {
-        let input = Self::prepare_input(&pixels);
-        let state = self.get_mut();
+        let input_col = Self::prepare_input(&pixels);
 
-        // Step 1: First convolutional layer
-        let mut x = apply_conv_layer(
-            &input,
-            &state.conv1_weights,
-            &state.conv1_bias,
-            24,
-            2, // Apply max-pooling with stride 2
-        );
+        let probabilities: Vec<Decimal> = {
+            let state = self.get();
+            let (conv1, conv2, fc1, fc2) = state.layers();
 
-        // Step 2: Second convolutional layer
-        let input_col = im2col(&x, 5);
-        x = apply_conv_layer(
-            &input_col,
-            &state.conv2_weights,
-            &state.conv2_bias,
-            8,
-            2, // Apply max-pooling with stride 2
-        );
+            // Step 1: First convolutional layer
+            let conv1_out = apply_conv_layer(
+                &input_col,
+                &conv1.weights,
+                &conv1.bias,
+                24,
+                2, // Apply max-pooling with stride 2
+            );
 
-        // Step 3: Flatten the result
-        let x = flatten_single(&x);
+            // Step 2: Second convolutional layer
+            let conv2_in_col = im2col(&conv1_out, 5);
+            let conv2_out = apply_conv_layer(
+                &conv2_in_col,
+                &conv2.weights,
+                &conv2.bias,
+                8,
+                2, // Apply max-pooling with stride 2
+            );
 
-        // Step 4: Fully connected layers
-        let x = relu_1d(&linear_single(&x, &state.fc1_weights, &state.fc1_bias));
-        let x = linear_single(&x, &state.fc2_weights, &state.fc2_bias);
+            // Step 3: Flatten the result
+            let flat_features = flatten_single(&conv2_out);
+            // Step 4: Fully connected layers
+            let hidden = relu_1d(&linear_single(&flat_features, &fc1.weights, &fc1.bias));
+            let logits = linear_single(&hidden, &fc2.weights, &fc2.bias);
 
-        // Step 5: Compute softmax probabilities
-        let probabilities = softmax(&x.to_vec());
-        state.result = Some(
-            probabilities
-                .into_iter()
-                .map(|dec| FixedPoint::from_decimal(&dec))
-                .collect(),
-        );
+            // Step 5: Compute softmax probabilities
+            softmax(&logits.to_vec())
+        };
 
+        let fixed_probs: Vec<Quant> = probabilities
+            .into_iter()
+            .map(|mut d| {
+                d.rescale(WEIGHT_SCALE);
+                i32::try_from(d.mantissa()).unwrap()
+            })
+            .collect();
+
+        self.get_mut().result = Some(fixed_probs);
     }
 
-    pub fn result(&self) -> Vec<FixedPoint> {
+    #[export]
+    pub fn result(&self) -> Vec<Quant> {
         self.get().result.clone().unwrap_or_default()
+    }
+
+    #[export]
+    pub fn layers_set(&self) -> (bool, bool, bool, bool) {
+        let state = self.get();
+        (
+            state.conv1.is_some(),
+            state.conv2.is_some(),
+            state.fc1.is_some(),
+            state.fc2.is_some(),
+        )
     }
 }
 
-pub struct DigitRecognitionProgram(());
+impl State {
+    fn layers(&self) -> (&ConvLayer, &ConvLayer, &FcLayer, &FcLayer) {
+        (
+            self.conv1.as_ref().expect("conv1 not set"),
+            self.conv2.as_ref().expect("conv2 not set"),
+            self.fc1.as_ref().expect("fc1 not set"),
+            self.fc2.as_ref().expect("fc2 not set"),
+        )
+    }
+}
+
+pub struct DigitRecognitionProgram {
+    state: RefCell<State>,
+}
 
 #[sails_rs::program]
 impl DigitRecognitionProgram {
-    pub fn new() -> Self {
-        DigitRecognitionService::init();
-        Self(())
+    pub fn init() -> Self {
+        Self {
+            state: RefCell::new(State::default()),
+        }
     }
 
-    pub fn digit_recognition(&self) -> DigitRecognitionService {
-        DigitRecognitionService::new()
+    pub fn digit_recognition(&self) -> DigitRecognitionService<'_> {
+        DigitRecognitionService::create(&self.state)
     }
 }

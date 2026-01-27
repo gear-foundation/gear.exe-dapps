@@ -1,19 +1,20 @@
-use digit_recognition_client::{traits::*, FixedPoint};
+use digit_recognition_app::{Quant, QuantFc1, FC1_SCALE, WEIGHT_SCALE};
 use eframe::egui;
 use eframe::App;
 use image::{imageops::FilterType, DynamicImage, ImageBuffer};
 use rust_decimal::Decimal;
+use sails_rs::gtest::constants::{DEFAULT_USERS_INITIAL_BALANCE, DEFAULT_USER_ALICE};
 use sails_rs::Encode;
-use sails_rs::{
-    calls::*,
-    gtest::{calls::*, System},
-};
+use sails_rs::{client::*, gtest::*};
 use std::sync::{Arc, Mutex};
 pub mod weights_and_biases;
+use digit_recognition_client::{
+    digit_recognition::*, DigitRecognition as DigitRecognitionClient, DigitRecognitionCtors,
+};
 use ndarray::Array1;
 use weights_and_biases::*;
 
-const ACTOR_ID: u64 = 42;
+pub type FixedPoint = (i128, u32);
 
 fn downscale_canvas(
     canvas: &[u8],
@@ -56,33 +57,32 @@ async fn async_main() {
 
     let pixels = pixels.lock().unwrap().clone();
 
+    println!("pixels {:?}", pixels);
     let system = System::new();
-    system.init_logger();
-    system.mint_to(ACTOR_ID, 100_000_000_000_000);
+    system.init_logger_with_default_filter("gwasm=debug");
+    system.mint_to(DEFAULT_USER_ALICE, DEFAULT_USERS_INITIAL_BALANCE);
+    let program_code_id = system.submit_code(digit_recognition::WASM_BINARY);
 
-    let remoting = GTestRemoting::new(system, ACTOR_ID.into());
-    remoting.system().init_logger();
+    let env = GtestEnv::new(system, DEFAULT_USER_ALICE.into());
 
-    let program_code_id = remoting
-        .system()
-        .submit_code(digit_recognition::WASM_BINARY);
-
-    let program_factory = digit_recognition_client::DigitRecognitionFactory::new(remoting.clone());
-
-    let program_id = program_factory
-        .new()
-        .send_recv(program_code_id, b"salt")
+    let program = env
+        .deploy::<digit_recognition_client::DigitRecognitionProgram>(
+            program_code_id,
+            b"salt".to_vec(),
+        )
+        .init()
         .await
         .unwrap();
 
-    let mut service_client = digit_recognition_client::DigitRecognition::new(remoting.clone());
+    let mut service_client = program.digit_recognition();
 
-    let conv1_weight = array4_to_fixed_points(CONV1_WEIGHT);
-    let conv1_bias = Array1::from(CONV1_BIAS.to_vec()).mapv(|value| FixedPoint {
-        num: value.mantissa(),
-        scale: value.scale(),
-    });
-
+    let conv1_weight = array4_to_i32_scaled(CONV1_WEIGHT);
+    let conv1_bias: Array1<i32> = Array1::from(
+        CONV1_BIAS
+            .iter()
+            .map(|&value| decimal_to_i32_scaled(value, WEIGHT_SCALE))
+            .collect::<Vec<i32>>(),
+    );
     let payload = [
         "DigitRecognition".encode(),
         "SetConv1Weights".encode(),
@@ -92,53 +92,91 @@ async fn async_main() {
     println!("CONV1 PAYLOAD {:?}", hex::encode(payload));
     service_client
         .set_conv_1_weights(conv1_weight, conv1_bias.to_vec())
-        .send_recv(program_id)
         .await
         .unwrap();
 
-    let conv2_weight = array4_to_fixed_points(CONV2_WEIGHT);
-    let conv2_bias = Array1::from(CONV2_BIAS.to_vec()).mapv(|value| FixedPoint {
-        num: value.mantissa(),
-        scale: value.scale(),
-    });
+    let conv2_weight = array4_to_i32_scaled(CONV2_WEIGHT);
+    let conv2_bias = Array1::from(
+        CONV2_BIAS
+            .iter()
+            .map(|&value| decimal_to_i32_scaled(value, WEIGHT_SCALE))
+            .collect::<Vec<i32>>(),
+    );
+
+    for (idx, &w) in FC1_WEIGHT.iter().flatten().enumerate() {
+        let q = decimal_to_i32_scaled(w, FC1_SCALE); // scale=5
+        if q < i16::MIN as i32 || q > i16::MAX as i32 {
+            println!("OVERFLOW idx={idx}, w={w}, scaled={q}");
+            break;
+        }
+    }
+    let payload = [
+        "DigitRecognition".encode(),
+        "SetConv2Weights".encode(),
+        (conv2_weight.clone(), conv2_bias.clone().to_vec()).encode(),
+    ]
+    .concat();
+    println!("CONV2 PAYLOAD {:?}", hex::encode(payload));
+
     service_client
         .set_conv_2_weights(conv2_weight, conv2_bias.to_vec())
-        .send_recv(program_id)
         .await
         .unwrap();
 
-    let fc1_weight = array2_to_fixed_points(FC1_WEIGHT);
-    let fc1_bias = Array1::from(FC1_BIAS.to_vec()).mapv(|value| FixedPoint {
-        num: value.mantissa(),
-        scale: value.scale(),
-    });
+    let fc1_weight = fc1_weights_to_quants(FC1_WEIGHT);
+    let fc1_bias = Array1::from(
+        FC1_BIAS
+            .iter()
+            .map(|&value| decimal_to_i16_scaled(value, FC1_SCALE))
+            .collect::<Vec<i16>>(),
+    );
+
+    let payload = [
+        "DigitRecognition".encode(),
+        "SetFc1Weights".encode(),
+        (fc1_weight.clone(), fc1_bias.clone().to_vec()).encode(),
+    ]
+    .concat();
+    println!("FC1 {:?}", hex::encode(payload));
     service_client
         .set_fc_1_weights(fc1_weight, fc1_bias.to_vec())
-        .send_recv(program_id)
         .await
         .unwrap();
 
-    let fc2_weight = array2_to_fixed_points(FC2_WEIGHT);
-    let fc2_bias = Array1::from(FC2_BIAS.to_vec()).mapv(|value| FixedPoint {
-        num: value.mantissa(),
-        scale: value.scale(),
-    });
+    let fc2_weight = array2_to_i32_scaled(FC2_WEIGHT);
+    let fc2_bias = Array1::from(
+        FC2_BIAS
+            .iter()
+            .map(|&value| decimal_to_i32_scaled(value, WEIGHT_SCALE))
+            .collect::<Vec<i32>>(),
+    );
+
+    let payload = [
+        "DigitRecognition".encode(),
+        "SetFc2Weights".encode(),
+        (fc2_weight.clone(), fc2_bias.clone().to_vec()).encode(),
+    ]
+    .concat();
+    println!("FC2 PAYLOAD {:?}", hex::encode(payload));
 
     service_client
         .set_fc_2_weights(fc2_weight, fc2_bias.to_vec())
-        .send_recv(program_id)
         .await
         .unwrap();
 
-    service_client
-        .predict(pixels.to_vec())
-        .send_recv(program_id)
-        .await
-        .unwrap();
+    let payload = [
+        "DigitRecognition".encode(),
+        "Predict".encode(),
+        (pixels.clone().to_vec()).encode(),
+    ]
+    .concat();
+    println!("PAYLOAD {:?}", hex::encode(payload));
 
-    let result = service_client.result().recv(program_id).await.unwrap();
+    service_client.predict(pixels.to_vec()).await.unwrap();
 
-    let result_f64: Vec<f64> = result.iter().map(|fp| fixed_point_to_float(fp)).collect();
+    let result = service_client.result().await.unwrap();
+
+    let result_f64: Vec<f64> = result.iter().map(|fp| quant_to_float(fp)).collect();
     for (index, &prob) in result_f64.iter().enumerate() {
         if prob > 0.05 {
             println!(
@@ -150,21 +188,59 @@ async fn async_main() {
     }
 }
 
-fn array4_to_fixed_points<const M: usize, const N: usize, const I: usize, const J: usize>(
+pub fn array2_to_i32_scaled<const M: usize, const N: usize>(
+    array: [[Decimal; M]; N],
+) -> Vec<Quant> {
+    array
+        .iter()
+        .flat_map(|row| {
+            row.iter()
+                .map(|&value| decimal_to_i32_scaled(value, WEIGHT_SCALE))
+        })
+        .collect()
+}
+
+fn array4_to_i32_scaled<const M: usize, const N: usize, const I: usize, const J: usize>(
     array: [[[[Decimal; M]; N]; I]; J],
-) -> Vec<FixedPoint> {
+) -> Vec<Quant> {
     array
         .iter()
         .flat_map(|layer| {
             layer.iter().flat_map(|matrix| {
                 matrix.iter().flat_map(|row| {
-                    row.iter().map(move |&value| FixedPoint {
-                        num: value.mantissa(),
-                        scale: value.scale(),
-                    })
+                    row.iter()
+                        .map(|&value| decimal_to_i32_scaled(value, WEIGHT_SCALE))
                 })
             })
         })
+        .collect()
+}
+
+fn decimal_to_i16_scaled(value: Decimal, target_scale: u32) -> i16 {
+    let m = value.mantissa(); // i128
+    let s = value.scale(); // u32
+
+    let scaled: i128 = if s == target_scale {
+        m
+    } else if s < target_scale {
+        m.checked_mul(pow10_i128(target_scale - s))
+            .expect("overflow while scaling up")
+    } else {
+        div_round_i128(m, pow10_i128(s - target_scale))
+    };
+
+    let as_i32 = i32::try_from(scaled).expect("scaled value doesn't fit i32");
+
+    if i16::try_from(as_i32).is_err() {
+        println!("{:?} {:?}", as_i32, value)
+    }
+    i16::try_from(as_i32).expect("scaled value doesn't fit i16 (reduce scale)")
+}
+
+pub fn fc1_weights_to_quants(weights: [[Decimal; 128]; 64]) -> Vec<QuantFc1> {
+    weights
+        .iter()
+        .flat_map(|row| row.iter().map(|&v| decimal_to_i16_scaled(v, FC1_SCALE)))
         .collect()
 }
 
@@ -173,13 +249,46 @@ pub fn array2_to_fixed_points<const M: usize, const N: usize>(
 ) -> Vec<FixedPoint> {
     array
         .iter()
-        .flat_map(|row| {
-            row.iter().map(|&value| FixedPoint {
-                num: value.mantissa(),
-                scale: value.scale(),
-            })
-        })
+        .flat_map(|row| row.iter().map(|&value| (value.mantissa(), value.scale())))
         .collect()
+}
+
+fn pow10_i128(p: u32) -> i128 {
+    10i128.pow(p)
+}
+
+fn div_round_i128(n: i128, d: i128) -> i128 {
+    let q = n / d;
+    let r = n % d;
+    if r == 0 {
+        return q;
+    }
+    let twice_r = r.abs() * 2;
+    if twice_r >= d {
+        if n >= 0 {
+            q + 1
+        } else {
+            q - 1
+        }
+    } else {
+        q
+    }
+}
+
+fn decimal_to_i32_scaled(value: Decimal, target_scale: u32) -> i32 {
+    let m = value.mantissa(); // i128
+    let s = value.scale(); // u32
+
+    let scaled: i128 = if s == target_scale {
+        m
+    } else if s < target_scale {
+        m.checked_mul(pow10_i128(target_scale - s))
+            .expect("i128 overflow while scaling up")
+    } else {
+        div_round_i128(m, pow10_i128(s - target_scale))
+    };
+
+    i32::try_from(scaled).expect("overflow: Decimal doesn't fit into i32 at this scale")
 }
 
 struct MnistApp {
@@ -319,7 +428,7 @@ impl MnistApp {
     }
 }
 
-fn fixed_point_to_float(fixed_point: &FixedPoint) -> f64 {
-    let scale_factor = 10_f64.powi(fixed_point.scale as i32);
-    fixed_point.num as f64 / scale_factor
+fn quant_to_float(quant: &Quant) -> f64 {
+    let scale_factor = 10_f64.powi(WEIGHT_SCALE as i32);
+    *quant as f64 / scale_factor
 }
