@@ -4,9 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "deploy:program": "MODE=deploy ts-node --esm digit-recognition/script/run.ts", 
+    "deploy:program": "MODE=deploy DOTENV_CONFIG_PATH=digit-recognition/.env ts-node --esm digit-recognition/script/run.ts", 
     "digit-predict": "MODE=predict DOTENV_CONFIG_PATH=digit-recognition/.env ts-node --esm digit-recognition/script/run.ts",
-    "injected": "MODE=injected ts-node --esm script/run.ts"
+    "mandelbrot:deploy-checkers": "MODE=create-checkers DOTENV_CONFIG_PATH=mandelbrot-set/.env ts-node --esm mandelbrot-set/script/run.ts",
+    "mandelbrot:calculate": "MODE=run-manager DOTENV_CONFIG_PATH=mandelbrot-set/.env ts-node --esm mandelbrot-set/script/run.ts",
+    "mandelbrot:full": "MODE=full DOTENV_CONFIG_PATH=mandelbrot-set/.env ts-node --esm mandelbrot-set/script/run.ts",
+    "arkanoid": "DOTENV_CONFIG_PATH=arkanoid/.env ts-node --esm arkanoid/vara-eth/script/run.ts"
   },
   "keywords": [],
   "author": "",

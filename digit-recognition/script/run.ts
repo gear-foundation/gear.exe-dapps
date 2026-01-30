@@ -2,23 +2,17 @@ import 'dotenv/config';
 import { drawMnist28x28 } from "./draw-ui.ts";
 import { createPublicClient, createWalletClient, hexToBytes, webSocket } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { VaraEthApi, WsVaraEthProvider, EthereumClient, getMirrorClient, getRouterClient, getWrappedVaraClient } from '@vara-eth/api';
 import type { Hex } from "viem";
 import type { IInjectedTransaction } from '@vara-eth/api';
 import { Sails } from 'sails-js';
 import { SailsIdlParser } from 'sails-js-parser';
-import dotenv from "dotenv";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: resolve(__dirname, ".env") });
 
 const ETHEREUM_RPC = process.env.ETHEREUM_RPC!;
 const PRIVATE_KEY = process.env.PRIVATE_KEY as `0x${string}`;
 const ROUTER_ADDRESS = process.env.ROUTER_ADDRESS as `0x${string}`;
-const VARA_ETH_RPC = process.env.VARA_ETH_RPC! as "ws://";
+const VARA_ETH_RPC = process.env.VARA_ETH_RPC! as "ws://"; = process.env.VARA_ETH_RPC! as "ws://";
 const IDL_PATH = new URL('../../target/wasm32-gear/release/digit_recognition.idl', import.meta.url);
 
 const CODE_ID = process.env.CODE_ID as `0x${string}`;  // digit recognition code id
@@ -87,7 +81,6 @@ async function waitForProgramOnVara(
     const ids = await api.query.program.getIds();
     const hasProgram = ids.map((x) => x.toLowerCase()).includes(target);
 
-    console.log("IDS", ids);
     if (hasProgram) {
       console.log(`Program ${programId} appeared on Vara.Eth (attempt ${i + 1}).`);
       return;
