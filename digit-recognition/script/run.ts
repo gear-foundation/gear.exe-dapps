@@ -197,6 +197,7 @@ async function deployProgram(
 
     // Weights for Fc2
     await sendInjectedTx(api, programId, payloads["fc2"]);
+    return programId;
 }
 
 async function sendMessage(

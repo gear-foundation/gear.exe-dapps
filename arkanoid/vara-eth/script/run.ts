@@ -139,6 +139,7 @@ async function deployProgram(
     const { waitForReply: initReply } = await initMsgTx.setupReplyListener();
     const reply = await initReply();
     console.log('Init reply:', reply);
+    return programId;
 }
 
 async function sendInjectedTx(
