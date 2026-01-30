@@ -77,8 +77,9 @@ cp .env.example .env
 
 Open .env and set your Ethereum private key:
 
+```
 PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
-
+```
 
 Verify the following variables (defaults come from .env.example):
 - `ETHEREUM_RPC` — public Hoodi Ethereum RPC (WebSocket)
