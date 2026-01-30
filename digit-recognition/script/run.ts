@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { drawMnist28x28 } from "./draw-ui.ts";
 import { createPublicClient, createWalletClient, hexToBytes, webSocket } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { VaraEthApi, WsVaraEthProvider, EthereumClient, getMirrorClient, getRouterClient, getWrappedVaraClient } from '@vara-eth/api';
 import type { Hex } from "viem";
 import type { IInjectedTransaction } from '@vara-eth/api';
@@ -12,7 +12,7 @@ import { SailsIdlParser } from 'sails-js-parser';
 const ETHEREUM_RPC = process.env.ETHEREUM_RPC!;
 const PRIVATE_KEY = process.env.PRIVATE_KEY as `0x${string}`;
 const ROUTER_ADDRESS = process.env.ROUTER_ADDRESS as `0x${string}`;
-const VARA_ETH_RPC = process.env.VARA_ETH_RPC! as "ws://";
+const VARA_ETH_RPC = process.env.VARA_ETH_RPC! as "ws://"; = process.env.VARA_ETH_RPC! as "ws://";
 const IDL_PATH = new URL('../../target/wasm32-gear/release/digit_recognition.idl', import.meta.url);
 
 const CODE_ID = process.env.CODE_ID as `0x${string}`;  // digit recognition code id
@@ -81,7 +81,6 @@ async function waitForProgramOnVara(
     const ids = await api.query.program.getIds();
     const hasProgram = ids.map((x) => x.toLowerCase()).includes(target);
 
-    console.log("IDS", ids);
     if (hasProgram) {
       console.log(`Program ${programId} appeared on Vara.Eth (attempt ${i + 1}).`);
       return;
@@ -148,7 +147,7 @@ async function deployProgram(
 ): Promise<ProgramId> {
     if (!CODE_ID) throw new Error('MAN_CODE_ID is not set');
 
-    const topUpAmount = BigInt(1000 * 1e12);
+    const topUpAmount = BigInt(10000 * 1e12);
 
     const tx = await router.createProgram(CODE_ID);
     await tx.sendAndWaitForReceipt();
@@ -198,6 +197,7 @@ async function deployProgram(
 
     // Weights for Fc2
     await sendInjectedTx(api, programId, payloads["fc2"]);
+    return programId;
 }
 
 async function sendMessage(
@@ -224,12 +224,7 @@ async function sendInjectedTx(
         payload,
       };
     const tx = await api.createInjectedTransaction(injected);
-
-    // const promise = await injected.send();
-    // console.log(promise)
-    const promise = await tx.sendAndWaitForPromise();
-    console.log(promise)
-    console.log(promise.reply.code)
+    await tx.sendAndWaitForPromise();
 }
 
 async function readResult(
@@ -317,15 +312,6 @@ async function main() {
 
   const { ethereumClient, api, router, wvara, walletClient, publicClient } = await initClients();
 
-
-  if (MODE === 'injected') {
-     const raw = await readFile(new URL("./payloads.txt", import.meta.url), "utf8");
-     const sails = await initSails(PROGRAM_ID);
-     await readRLayers(sails, api, ethereumClient, PROGRAM_ID);
-      const payloads = parseSectionedPayloadFile(raw);
-      //await sendInjectedTx(api, PROGRAM_ID, payloads["fc1"]);
-     return;
-  }
  
   if (MODE === 'deploy') {
     let programId = await deployProgram(api, router, wvara, walletClient, publicClient);
@@ -336,13 +322,21 @@ async function main() {
   }
 
   if (MODE === 'predict') {
-      console.log("Open draw UI...");
+      const mirror = getMirrorClient(PROGRAM_ID, walletClient, publicClient);
+      const stateHash = await mirror.stateHash();
+      let state = await api.query.program.readState(stateHash);
+      if (state.executableBalance <  BigInt(80 * 1e12)) {
+        console.log("Please top up the program balance");
+      }
+      console.log("Open draw UI...");      
+
       const pixelsU8 = await drawMnist28x28({ port: 5174, openBrowser: true });
       const pixelsU16 = pixelsU8.map((v) => v); 
       const sails = await initSails(PROGRAM_ID);
       const payload = sails.services.DigitRecognition.functions.Predict.encodePayload(pixelsU16);
       console.log("Sending to contract...");
       await sendInjectedTx(api, PROGRAM_ID, payload);
+      await wait1Block();
       await wait1Block();
       let result = await readResult(sails, api, ethereumClient, PROGRAM_ID);
       console.log(formatProbsConsole(result, 6));

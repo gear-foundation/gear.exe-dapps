@@ -56,3 +56,81 @@ You will see the prediction result in the terminal, including the predicted digi
 ```
 Digit 3 predicted with 99.20% probability
 ```
+
+## Running on Vara-Eth
+
+This repository also includes a TypeScript runner that interacts with the deployed contract via **Vara-Eth** (Router + Mirror) and provides a simple local UI to draw digits and send them on-chain for inference.
+
+### Prerequisites
+
+- **Node.js** (LTS recommended, v20+)
+- **pnpm** (v10+)
+- A configured `.env` with RPC endpoints and deployed IDs
+
+### 1) Environment configuration
+
+Create your `.env` from the example:
+
+```bash
+cp .env.example .env
+```
+
+Open .env and set your Ethereum private key:
+
+```
+PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
+```
+
+Verify the following variables (defaults come from .env.example):
+- `ETHEREUM_RPC` — public Hoodi Ethereum RPC (WebSocket)
+- `VARA_ETH_RPC` — public Vara-Eth validator WebSocket endpoint
+- `ROUTER_ADDRESS` — Router contract address on Ethereum
+- `CODE_ID` — deployed code ID on Vara-Eth (used for program creation)
+- `PROGRAM_ID` — deployed program ID on Vara-Eth (used for prediction calls)
+If you redeploy code or create a new program, update `CODE_ID` / `PROGRAM_ID` accordingly.
+### 2) Install dependencies
+
+```
+pnpm install
+```
+### 3) Predict a digit (on-chain)
+
+Run the prediction flow:
+
+```
+pnpm run digit-predict
+```
+
+
+A local UI window will open. Draw a digit from 0 to 9, then click `Send to contract`.
+
+After processing, the script prints per-class probabilities and the final prediction in the terminal, for example:
+```
+0:   0.16% |                              | raw=1551
+1:   0.04% |                              | raw=369
+2:   0.36% |                              | raw=3598
+3:   1.74% |#                             | raw=17432
+4:   0.00% |                              | raw=37
+5:   0.13% |                              | raw=1297
+6:   0.00% |                              | raw=5
+7:   0.02% |                              | raw=153
+8:  97.55% |##############################| raw=975521 <==
+9:   0.00% |                              | raw=36
+Prediction: 8 (97.55%)
+```
+### 4) Deploy a new program (optional)
+
+If you want to deploy a new program instance via Router, run:
+
+```
+pnpm run deploy:program
+```
+
+The script will:
+- create a new program from CODE_ID,
+- wait until it appears on Vara-Eth,
+- top up executable balance,
+- initialize the contract,
+- upload model weights via injected transactions.
+
+After deployment, copy the resulting `PROGRAM_ID` from logs into your `.env`.

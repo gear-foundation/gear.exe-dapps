@@ -1,0 +1,38 @@
+{
+  "name": "vara-eth-dapps",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy:program": "MODE=deploy DOTENV_CONFIG_PATH=digit-recognition/.env ts-node --esm digit-recognition/script/run.ts", 
+    "digit-predict": "MODE=predict DOTENV_CONFIG_PATH=digit-recognition/.env ts-node --esm digit-recognition/script/run.ts",
+    "mandelbrot:deploy-checkers": "MODE=create-checkers DOTENV_CONFIG_PATH=mandelbrot-set/.env ts-node --esm mandelbrot-set/script/run.ts",
+    "mandelbrot:calculate": "MODE=run-manager DOTENV_CONFIG_PATH=mandelbrot-set/.env ts-node --esm mandelbrot-set/script/run.ts",
+    "mandelbrot:full": "MODE=full DOTENV_CONFIG_PATH=mandelbrot-set/.env ts-node --esm mandelbrot-set/script/run.ts",
+    "arkanoid": "DOTENV_CONFIG_PATH=arkanoid/.env ts-node --esm arkanoid/vara-eth/script/run.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vara-eth/api": "^0.1.1",
+    "dotenv": "^17.2.3",
+    "kzg-wasm": "^1.0.0",
+    "sails-js": "^0.5.1",
+    "sails-js-parser": "^0.5.1",
+    "viem": "^2.40.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitest/ui": "^4.0.15",
+    "happy-dom": "^20.0.11",
+    "ts-node": "^10.9.2",
+    "@polkadot/util": "13.5.6",
+    "@polkadot/api": "16.4.6",
+    "@polkadot/wasm-crypto": "^7.5.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  },
+  "packageManager": "pnpm@10.16.1+sha512.0e155aa2629db8672b49e8475da6226aa4bdea85fdcdfdc15350874946d4f3c91faaf64cbdc4a5d1ab8002f473d5c3fcedcd197989cf0390f9badd3c04678706"
+}

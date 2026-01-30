@@ -28,3 +28,50 @@ This document describes the setup, execution, and benchmark results of the **Ark
 ## Conclusion
 
 This comparison illustrates that Gear.exe offers unparalleled efficiency by fitting multiple high-load simulations into a single block at minimal cost.
+
+## Running on Vara-Eth
+This repository includes a TypeScript runner that deploys the Arkanoid program on Vara-Eth via **Router + Mirror**, tops up executable balance (reverse gas model), runs the simulation for a fixed number of steps, and reads the resulting ball position from contract state.
+
+### Prerequisites
+
+- **Node.js** (LTS recommended, v20+)
+- **pnpm** (v10+)
+- A configured `.env` with RPC endpoints and deployed IDs
+
+### 1) Environment configuration
+
+Create your `.env` from the example:
+
+```bash
+cp .env.example .env
+```
+Open .env and set your Ethereum private key:
+
+```
+PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
+```
+Update these variables:
+- `ETHEREUM_RPC` — Ethereum WebSocket RPC endpoint
+- `VARA_ETH_RPC` — Vara-Eth validator WebSocket endpoint
+- `ROUTER_ADDRESS` — Router contract address on Ethereum
+- `PRIVATE_KEY` — your Ethereum private key (used to sign Router/Mirror txs)
+Program deployment inputs:
+- `CODE_ID` — deployed code ID of the Arkanoid contract on Vara-Eth
+
+### 2) Install dependencies
+
+```
+pnpm install
+```
+### 3) Run the benchmark script
+```
+pnpm run arkanoid
+```
+
+What the script does:
+- Creates a new program instance from `CODE_ID` via Router;
+- Waits until the program appears on Vara-Eth;
+- Approves and tops up executable balance (so the program can pay for computation);
+- Calls contract constructor `Init`.
+- Sends an injected transaction to run the simulation (`SimulateGame(numOfSteps)`).
+- Queries the resulting ball position via `BallPosition` query.
