@@ -1,18 +1,18 @@
 {
-  "name": "digital-recognition",
+  "name": "vara-eth-dapps",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "deploy:program": "MODE=deploy ts-node --esm script/run.ts", 
-    "predict": "MODE=predict ts-node --esm script/run.ts",
+    "deploy:program": "MODE=deploy ts-node --esm digit-recognition/script/run.ts", 
+    "digit-predict": "MODE=predict DOTENV_CONFIG_PATH=digit-recognition/.env ts-node --esm digit-recognition/script/run.ts",
     "injected": "MODE=injected ts-node --esm script/run.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@vara-eth/api": "^0.1.0",
+    "@vara-eth/api": "^0.1.1",
     "dotenv": "^17.2.3",
     "kzg-wasm": "^1.0.0",
     "sails-js": "^0.5.1",

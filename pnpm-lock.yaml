@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@vara-eth/api':
-        specifier: ^0.1.0
-        version: 0.1.0(kzg-wasm@1.0.0)(viem@2.44.0(typescript@5.9.3))
+        specifier: ^0.1.1
+        version: 0.1.1(kzg-wasm@1.0.0)(viem@2.44.0(typescript@5.9.3))
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -650,8 +650,8 @@ packages:
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
-  '@vara-eth/api@0.1.0':
-    resolution: {integrity: sha512-JQa1PlHuCfbKL0Z6QmL7Q/PWoPaQI/osWOOQHXofPBppvtKO6NhSkCP5c12/RzyZfiZlvZNAXF8QnmG/ZtPLRw==}
+  '@vara-eth/api@0.1.1':
+    resolution: {integrity: sha512-6qSymNHi4azSUpevs0Nvc+zlKmd9ljjJXYQA1RYnJAz+rrzyOCPtJMxRKnVvMX7yKdRTreBtDzTWxiBUeMQllw==}
     engines: {node: '>=22'}
     peerDependencies:
       kzg-wasm: 1.0.0
@@ -1735,7 +1735,7 @@ snapshots:
     dependencies:
       '@types/node': 24.10.4
 
-  '@vara-eth/api@0.1.0(kzg-wasm@1.0.0)(viem@2.44.0(typescript@5.9.3))':
+  '@vara-eth/api@0.1.1(kzg-wasm@1.0.0)(viem@2.44.0(typescript@5.9.3))':
     dependencies:
       '@ethereumjs/util': 10.1.0
       '@noble/hashes': 1.8.0
