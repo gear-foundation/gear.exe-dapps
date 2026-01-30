@@ -73,7 +73,6 @@ Program deployment inputs:
 - `CHECKER_CODE_ID` — deployed code ID for the Checker contract on Vara-Eth
 - `MAN_CODE_ID` — deployed code ID for the Manager contract on Vara-Eth
 - `PROGRAM_COUNT` — number of Checker programs to create (default: 16)
-- `PROGRAM_ID` — deployed Manager contract
 
 ### 2) Install dependencies
 ```
