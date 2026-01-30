@@ -59,6 +59,11 @@ Create your `.env` from the example:
 ```bash
 cp .env.example .env
 ```
+Open .env and set your Ethereum private key:
+
+```
+PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
+```
 Update these variables:
 - `ETHEREUM_RPC` — Ethereum WebSocket RPC endpoint
 - `VARA_ETH_RPC` — Vara-Eth validator WebSocket endpoint
@@ -118,9 +123,11 @@ This command will:
 - deploy a new Manager program from `MAN_CODE_ID`;
 - top up Manager executable balance and initialize it
 - generate and store the computation grid (e.g. 100×100 = 10,000 points);
-
-register the checkers in the manager
-
-distribute the work and aggregate results
+- register the checkers in the manager;
+- distribute the work and aggregate results.
 
 Example output:
+```
+Amount of points: 10000
+```
+`Amount of points` corresponds to the size of the generated grid (e.g. 100×100).
