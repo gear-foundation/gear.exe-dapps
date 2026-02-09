@@ -12,7 +12,7 @@ import { SailsIdlParser } from 'sails-js-parser';
 const ETHEREUM_RPC = process.env.ETHEREUM_RPC!;
 const PRIVATE_KEY = process.env.PRIVATE_KEY as `0x${string}`;
 const ROUTER_ADDRESS = process.env.ROUTER_ADDRESS as `0x${string}`;
-const VARA_ETH_RPC = process.env.VARA_ETH_RPC! as "ws://"; = process.env.VARA_ETH_RPC! as "ws://";
+const VARA_ETH_RPC = process.env.VARA_ETH_RPC! as "ws://";
 const IDL_PATH = new URL('../../target/wasm32-gear/release/digit_recognition.idl', import.meta.url);
 
 const CODE_ID = process.env.CODE_ID as `0x${string}`;  // digit recognition code id
